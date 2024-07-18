@@ -4,6 +4,9 @@ import jKendrick.core.Model;
 import jKendrick.simulation.Scenario;
 import jKendrick.solvers.RKSolver;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
         double[] initialPopulation = {0.99, 0.01, 0.0}; // Initial state: S=0.99, I=0.01, R=0.0
@@ -22,8 +25,10 @@ public class Main {
 
         double[][] result = solver.getResult();
 
-        Visualization viz = new Visualization();
+        List<String> compartments = Arrays.asList("Susceptible", "Infected", "Recovered");
+        Visualization viz = new Visualization("Epidemic Model", "Time", "Population", compartments);
         viz.plotResults(result, model.getStep());
     }
 }
+
 
