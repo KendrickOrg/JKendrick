@@ -20,7 +20,7 @@ A **scenario** is a ground model, i.e. a model in which all parameters have been
 
 ### Simulations
 
-A **simulation** is a call to a 
+A **simulation** is a call to a solver on a scenario with values for the required parameters such as the time step and the duration of the simulation.
 
 
 
