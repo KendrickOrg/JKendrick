@@ -1,10 +1,10 @@
 package jKendrick.solvers;
 
 import jKendrick.core.ISolver;
-import jKendrick.core.Model;
 import jKendrick.simulation.Scenario;
 import org.apache.commons.math3.ode.FirstOrderIntegrator;
 import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
+
 
 public class RKSolver implements ISolver {
     private FirstOrderIntegrator integrator;
@@ -14,9 +14,9 @@ public class RKSolver implements ISolver {
     private int nbSteps;
     private double[][] result;
 
-    public RKSolver(Model model, Scenario scenario) {
-        this.step = model.getStep();
-        this.end = model.getEnd();
+    public RKSolver(Scenario scenario, double step, double end) {
+        this.step = step;
+        this.end = end;
         this.scenario = scenario;
         this.nbSteps = (int) Math.ceil(end / step);
         this.integrator = new ClassicalRungeKuttaIntegrator(step);

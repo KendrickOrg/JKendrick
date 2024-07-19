@@ -1,4 +1,5 @@
 package jKendrick.IHM;
+import jKendrick.core.ISolver;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.SwingWrapper;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 public class Visualization {
 
@@ -56,22 +58,43 @@ public class Visualization {
         return dataSeries;
     }
 
+    public void getChart(ISolver solver, String title, String xAxisLabel, String yAxisLabel) throws IOException {
+        double[][] results = solver.getResult();
+        plotResults(results, 0.1); // Assuming a default step value, adjust as needed
+    }
+
     public static void main(String[] args) {
         // Example data
-        double step = 0.1;
-        double[][] results = {
-                {0.99, 0.01, 0.0},
-                {0.98, 0.02, 0.0},
-                {0.97, 0.03, 0.0}
-                // Add more data points as needed
-        };
-
+        double step = 10;
         List<String> compartments = new ArrayList<>();
+
         compartments.add("Susceptible");
         compartments.add("Infected");
         compartments.add("Recovered");
+
+        double[][] results = {
+                {0.9900, 0.0100, 0.0000}, // S I R at time 0
+                {0.9045, 0.0654, 0.0301},
+                {0.5845, 0.2399, 0.1757},
+                {0.2464, 0.2900, 0.4636},
+                {0.1210, 0.1784, 0.7005},
+                {0.0821, 0.0881, 0.8297},
+                {0.0683, 0.0405, 0.8912},
+                {0.0628, 0.0181, 0.9191},
+                {0.0605, 0.0080, 0.9314},
+                {0.0596, 0.0035, 0.9369},
+                {0.0591, 0.0016, 0.9393},
+                {0.0589, 0.0007, 0.9404},
+                {0.0589, 0.0003, 0.9408},
+                {0.0588, 0.0001, 0.9410},
+                {0.0588, 0.0001, 0.9411},
+                {0.0588, 0.0000, 0.9412}
+        };
+
+
 
         Visualization viz = new Visualization("Epidemic Model", "Time", "Population", compartments);
         viz.plotResults(results, step);
     }
 }
+

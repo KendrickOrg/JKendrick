@@ -4,22 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Model {
-    private double step;
-    private double end;
     private Map<String, Double> parameters;
 
-    public Model(double step, double end) {
-        this.step = step;
-        this.end = end;
+    public Model() {
         this.parameters = new HashMap<>();
-    }
-
-    public double getStep() {
-        return step;
-    }
-
-    public double getEnd() {
-        return end;
     }
 
     public void setParameter(String name, double value) {
