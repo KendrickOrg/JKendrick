@@ -8,19 +8,17 @@ https://github.com/KendrickOrg/kendrick/wiki
 
 ### Models and Concerns
 
-An epidemic **model** is a Continuous Time Markov Chain (CTMC), although it is typically described as an Ordinary Differential Equations (ODE). A full epidimic model is a composition of so-called concerns.
+An epidemic ***model*** is a Continuous Time Markov Chain (CTMC), although it is typically described as an Ordinary Differential Equations (ODE). A full epidimic model is a composition of so-called concerns.
 
-A **concern** is an aspect of a model which is also described as a CTMC and may be seen as an incomplete model. For instance the spatial structure of a model is a concern. 
+A ***concern*** is an aspect of a model which is also described as a CTMC and may be seen as an incomplete model. For instance the spatial structure of a model is a concern. 
 
 To be a full epidemic model that can be simulated, a model must include a **core** concern such as SIR, SIS, SEIR ...
 
-### Scenarios
+### Solvers,  Scenarios, and Simualtions 
 
-A **scenario** is a ground model, i.e. a model in which all parameters have been assigned a value.
+A ***scenario*** is a ground model, i.e. a model in which all parameters have been assigned a value so that it is ready to be "solved" i.e. in our context, run by a ***solver*** in a ***simulation***, i.e. animated for a given duration with a given time step.
 
-### Simulations
-
-A **simulation** is a call to a solver on a scenario with values for the required parameters such as the time step and the duration of the simulation.
+Since our models are stochastic automata they can be run using, say, Gillespie's algorithm or the faster Tau Leap, but their underlying ODEs can also be numerically solved using, for instance, RK4.
 
 
 
