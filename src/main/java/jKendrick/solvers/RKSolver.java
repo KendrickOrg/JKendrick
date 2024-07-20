@@ -8,15 +8,13 @@ import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
 
 public class RKSolver implements ISolver {
     private FirstOrderIntegrator integrator;
-    private double step;
-    private double end;
+    private double step; // time step
     private Scenario scenario;
     private int nbSteps;
     private double[][] result;
 
     public RKSolver(Scenario scenario, double step, double end) {
         this.step = step;
-        this.end = end;
         this.scenario = scenario;
         this.nbSteps = (int) Math.ceil(end / step);
         this.integrator = new ClassicalRungeKuttaIntegrator(step);
@@ -24,12 +22,11 @@ public class RKSolver implements ISolver {
 
     @Override
     public void solve() {
-        scenario.saveInitialParams();
         double t = 0.0;
         result = new double[nbSteps + 1][scenario.getNbCompartments()];  // +1 to account for initial state
 
         for (int i = 0; i <= nbSteps; t += step, ++i) {  // Ensure loop runs nbSteps + 1 times
-            double[] population = scenario.getPopulation();
+            double[] population = scenario.getCardinalities();
             result[i] = population.clone();
             if (i < nbSteps) {
                 integrator.integrate(scenario, t, population, t + step, population);

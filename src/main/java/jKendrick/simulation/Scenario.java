@@ -4,33 +4,29 @@ import jKendrick.core.Model;
 import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 
 public class Scenario implements FirstOrderDifferentialEquations {
-    private double[] population;
+    private double[] cardinalities;
     private Model model;
 
-    public Scenario(double[] initialPopulation, Model model) {
-        this.population = initialPopulation;
+    public Scenario(double[] initialCardinalities, Model model) {
+        this.cardinalities = initialCardinalities;
         this.model = model;
     }
 
-    public double[] getPopulation() {
-        return population;
+    public double[] getCardinalities() {
+        return cardinalities;
     }
 
     public int getNbCompartments() {
-        return population.length;
+        return cardinalities.length;
     }
 
-    public void saveInitialParams() {
-        // Save initial parameters if needed
-    }
-
-    public void updateParameters(double[] newPopulation) {
-        this.population = newPopulation;
+    public void updateParameters(double[] newCardinalities) {
+        this.cardinalities = newCardinalities;
     }
 
     @Override
     public int getDimension() {
-        return population.length;
+        return getNbCompartments();
     }
 
     @Override
