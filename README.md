@@ -10,7 +10,7 @@ https://github.com/KendrickOrg/kendrick/wiki
 
 An epidemic ***model*** is a Continuous Time Markov Chain (CTMC), although it is typically described as aset of Ordinary Differential Equations (ODEs). A full epidimic model is a composition of so-called concerns.
 
-A ***concern*** is an aspect of a model which is also described as a CTMC and may be seen as an incomplete model. For instance the spatial structure of a model is a concern. 
+A ***concern*** is an aspect of a model which is also described as a CTMC and may be seen as an incomplete model. For instance the spatial structure of a model, the host species, and quarantine policies may be defined as a concern. 
 
 To be a full epidemic model that can be simulated, a model must include a **core** concern such as SIR, SIS, SEIR ...
 
