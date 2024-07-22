@@ -9,8 +9,7 @@ https://github.com/KendrickOrg/kendrick/wiki
 The object-oriented [meta-model of Kendrick] (https://www.plantuml.com/plantuml/uml/XLDDRzim3BthLmWv5cYnNeCT6gm1UjYQ81vwfsCs5QOFJn_5Xgt_VQBbihAThZVnlKVfaHHlGWGVaz72Wi7Gmn4bzah-4TzSXrgwoqkvkbx9PdC_8YEmkzqslqD4Kmi_NLrThEGUF1YCwEMIAy1QXjGQEWRnflxyD-iE476PjedHgpPDgUk1-k9C3puQj77kEK9CGLG2Wfac_1uCIi6drsifMPbUu_PdKi-WqHxnW1gYSbOADbCSZy-yYAg5sKV8FUGcrOOpU9vu0A-WrKZiYB-1kMSQ7-CTsAvHtLIp_TLx326RMqklJa-icfeou7-uPnhjSDXxTynPfGYQxoP5Po0wMtV-kmSRL2cy5h1hAXz59QkQU3X7NH1Lqd9HZzwP3oJHYMolVfEDb9yqXZ0j5xahD8ejHwNWFDM42vH7m6qlE7_IHSQkHv-T-8nBpXgOhtUDg5YUrYjMatLnrGjhwKXZky3Yych-bw3du5wdETGaCqCs-UQJfMNOzQ84I95aV-yfM425BV6PSVyqMmdG9smzo3mBAV-pNlMOOtm0dGQSakgONyqWxUwxF265vRND54Mtpe2o4ueopjrSf8JM_ihLzHXBYsiR_2S6Zkzy4JTeksJqFm00)
 is still to be improved.
 
-The real foundation is its mathematical model, see publications.
-
+The real foundation is its mathematical model, see publications, which relies on stochastic automata networks (SANs).
 
 ### Models and Concerns
 
