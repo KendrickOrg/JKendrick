@@ -16,7 +16,7 @@ To be a full epidemic model that can be simulated, a model must include a ***cor
 
 ### Solvers,  Scenarios, and Simualtions 
 
-A ***scenario*** is a ground model, i.e. a model in which all parameters have been assigned a value so that it is ready to be "solved" i.e. in our context, run by a ***solver*** in a ***simulation***, i.e. animated for a given duration with a given time step.
+A ***scenario*** is a ground model, i.e. a model in which all parameters have been assigned a value so that it is ready to be "solved" i.e. in our context, run by a ***solver*** in a ***simulation*** for a given duration with a given time step.
 
 Since our models are stochastic automata they can be run using, say, Gillespie's algorithm or the faster Tau Leap, but their underlying ODEs can also be numerically solved using, for instance, RK4.
 
