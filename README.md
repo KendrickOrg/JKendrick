@@ -8,7 +8,7 @@ https://github.com/KendrickOrg/kendrick/wiki
 
 ### Models and Concerns
 
-An epidemic ***model*** is a Continuous Time Markov Chain (CTMC), although it is typically described as an Ordinary Differential Equations (ODE). A full epidimic model is a composition of so-called concerns.
+An epidemic ***model*** is a Continuous Time Markov Chain (CTMC), although it is typically described as aset of Ordinary Differential Equations (ODEs). A full epidimic model is a composition of so-called concerns.
 
 A ***concern*** is an aspect of a model which is also described as a CTMC and may be seen as an incomplete model. For instance the spatial structure of a model is a concern. 
 
