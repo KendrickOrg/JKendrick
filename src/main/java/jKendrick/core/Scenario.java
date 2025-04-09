@@ -63,13 +63,19 @@ public abstract class Scenario implements FirstOrderDifferentialEquations {
         double sigma = model.getParameter("sigma");
         double N = model.getParameter("population");
 
-        return switch (from + "->" + to) {
-            case "S->I", "S->E" -> beta * S * I / N;
-            case "I->R", "I->S" -> gamma * I;
-            case "I->D" -> mu * I;
-            case "E->I" -> sigma * E;
-            default -> 0.0;
-        };
+        String transition = from + "->" + to;
+
+        if (transition.equals("S->I") || transition.equals("S->E")) {
+            return beta * S * I / N;
+        } else if (transition.equals("I->R") || transition.equals("I->S")) {
+            return gamma * I;
+        } else if (transition.equals("I->D")) {
+            return mu * I;
+        } else if (transition.equals("E->I")) {
+            return sigma * E;
+        } else {
+            return 0.0;
+        }
     }
 
     public void transition(String from, String to) {
