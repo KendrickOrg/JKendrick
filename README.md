@@ -18,14 +18,13 @@ A ***concern*** is an aspect of a model which is also described as a CTMC and wh
 
 To be a full epidemic model that can be simulated, a model must include a ***core*** concern such as SIR, SIS, SEIR ...
 
-### Solvers,  Scenarios, and Simualtions 
+### Solvers, Scenarios, and Simualtions
 
 A ***scenario*** is a ground model, i.e. a model in which all parameters have been assigned a value so that it is ready to be "solved" i.e. in our context, run by a ***solver*** in a ***simulation*** for a given duration with a given time step.
 
 Since our models are stochastic automata they can be run using, say, Gillespie's algorithm or the faster Tau Leap, but their underlying ODEs can also be numerically solved using, for instance, RK4.
 
 ## Publications
-
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
 
 
