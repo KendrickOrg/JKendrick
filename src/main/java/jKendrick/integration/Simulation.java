@@ -1,38 +1,36 @@
 package jKendrick.integration;
 
-import java.io.IOException;
-
 import jKendrick.core.ISolver;
 
 public class Simulation {
-	private ISolver solver;
-	private Visualization v;
-	private String title;
-	private double step;
-	private double end;
+	private final ISolver solver;
+	private final Visualization viz;
+	private final String title;
 
-	public Simulation(ISolver solver, Visualization v, String title, double step, double end) {
+	public Simulation(ISolver solver, Visualization viz, String title) {
 		this.solver = solver;
-		this.v = v;
+		this.viz = viz;
 		this.title = title;
-		this.step = step;
-		this.end = end;
 	}
-
-	public double getStep() {
-		return step;
-	}
-
-	public double getEnd() {
-		return end;
+	private boolean isValid(double val) {
+		return !(Double.isNaN(val) || Double.isInfinite(val));
 	}
 
 	public void simulate() {
 		solver.solve();
-		try {
-			v.getChart(solver, title, "time", "population");
-		} catch (IOException e) {
-			e.printStackTrace();
+		double[][] results = solver.getResult();
+		for (int i = 0; i < results.length; i++) {
+			for (int j = 0; j < results[i].length; j++) {
+				if (!isValid(results[i][j])) {
+					System.err.printf("Step=%d Compartment=%d => %f (INVALIDE)\n", i, j, results[i][j]);
+				}
+			}
+		}
+
+		if (solver.isStochastic()) {
+			viz.getChart(solver.getMultiRunResult(), solver.getTimes(), solver.getLabels(), title);
+		} else {
+			viz.getChart(solver.getResult(), solver.getTimes(), solver.getLabels(), title);
 		}
 	}
 }
