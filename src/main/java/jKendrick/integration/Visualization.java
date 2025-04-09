@@ -76,6 +76,22 @@ public class Visualization {
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Line);
         chart.getStyler().setMarkerSize(4);
 
+        chart.getStyler().setChartBackgroundColor(new Color(30, 30, 30));
+        chart.getStyler().setPlotBackgroundColor(new Color(40, 40, 40));
+        chart.getStyler().setPlotGridLinesColor(new Color(60, 60, 60));
+
+        chart.getStyler().setChartFontColor(Color.WHITE);
+        chart.getStyler().setAxisTickLabelsColor(Color.LIGHT_GRAY);
+
+        chart.getStyler().setLegendBackgroundColor(new Color(40, 40, 40));
+        chart.getStyler().setLegendBorderColor(Color.WHITE);
+        chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
+
+        chart.getStyler().setChartTitleFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        chart.getStyler().setAxisTitleFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        chart.getStyler().setLegendFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        chart.getStyler().setAxisTickLabelsFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        chart.getStyler().setSeriesLines(new BasicStroke[]{ new BasicStroke(2.5f) });
         return chart;
     }
 
