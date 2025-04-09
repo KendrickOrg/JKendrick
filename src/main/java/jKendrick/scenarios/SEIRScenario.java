@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SEIRScenario extends Scenario {
-
     public SEIRScenario(double[] initialCardinalities, Model model) {
         super(initialCardinalities, model);
     }
