@@ -25,7 +25,6 @@ A ***scenario*** is a ground model, i.e. a model in which all parameters have be
 Since our models are stochastic automata they can be run using, say, Gillespie's algorithm or the faster Tau Leap, but their underlying ODEs can also be numerically solved using, for instance, RK4.
 
 ## Publications
-test
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
 
 
