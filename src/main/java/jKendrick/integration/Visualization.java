@@ -105,13 +105,18 @@ public class Visualization {
     }
 
     private Color getColor(String label) {
-        return switch (label) {
-            case "S", "Susceptible" -> Color.BLUE;
-            case "I", "Infected" -> Color.ORANGE;
-            case "R", "Recovered" -> Color.MAGENTA;
-            case "E", "Exposed" -> Color.CYAN;
-            case "D", "Dead" -> Color.GREEN;
-            default -> Color.GRAY;
-        };
+        if ("S".equals(label) || "Susceptible".equals(label)) {
+            return Color.BLUE;
+        } else if ("I".equals(label) || "Infected".equals(label)) {
+            return Color.ORANGE;
+        } else if ("R".equals(label) || "Recovered".equals(label)) {
+            return Color.MAGENTA;
+        } else if ("E".equals(label) || "Exposed".equals(label)) {
+            return Color.CYAN;
+        } else if ("D".equals(label) || "Dead".equals(label)) {
+            return Color.GREEN;
+        } else {
+            return Color.GRAY;
+        }
     }
 }
