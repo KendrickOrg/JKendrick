@@ -1,6 +1,5 @@
-package jKendrick.simulation;
+package jKendrick.core;
 
-import jKendrick.core.Model;
 import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 
 public class Scenario implements FirstOrderDifferentialEquations {

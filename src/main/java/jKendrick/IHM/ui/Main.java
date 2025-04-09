@@ -1,8 +1,9 @@
-package jKendrick.IHM;
+package jKendrick.IHM.ui;
 
+import jKendrick.integration.Visualization;
 import jKendrick.core.Model;
-import jKendrick.simulation.Scenario;
-import jKendrick.simulation.Simulation;
+import jKendrick.core.Scenario;
+import jKendrick.integration.Simulation;
 import jKendrick.solvers.RKSolver;
 import java.util.Arrays;
 import java.util.List;

@@ -1,4 +1,4 @@
-package jKendrick.IHM;
+package jKendrick.integration;
 import jKendrick.core.ISolver;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;

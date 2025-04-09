@@ -1,7 +1,7 @@
 package jKendrick.solvers;
 
 import jKendrick.core.ISolver;
-import jKendrick.simulation.Scenario;
+import jKendrick.core.Scenario;
 import org.apache.commons.math3.ode.FirstOrderIntegrator;
 import org.apache.commons.math3.ode.nonstiff.ClassicalRungeKuttaIntegrator;
 

@@ -1,8 +1,7 @@
-package jKendrick.simulation;
+package jKendrick.integration;
 
 import java.io.IOException;
 
-import jKendrick.IHM.Visualization;
 import jKendrick.core.ISolver;
 
 public class Simulation {
