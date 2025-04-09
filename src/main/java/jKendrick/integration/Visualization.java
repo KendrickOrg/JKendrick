@@ -17,7 +17,6 @@ public class Visualization {
 
         for (int i = 0; i < labels.size(); i++) {
             double[] yData = new double[results.length];
-            double[] safeX = new double[results.length];
 
             for (int j = 0; j < results.length; j++) {
                 yData[j] = results[j][i];
@@ -58,7 +57,7 @@ public class Visualization {
                 yData[t] = multiRunResults[medianRun][t][c];
             }
             chart.addSeries(labels.get(c), xData, yData)
-                    .setLineColor(getColor(labels.get(c)));;
+                    .setLineColor(getColor(labels.get(c)));
         }
 
         showChart(chart);
