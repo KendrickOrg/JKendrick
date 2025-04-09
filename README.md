@@ -1,5 +1,4 @@
 # JKendrick2
-
 JKendrick2 is a new, cleaner, implementation of JKendrick. JKendrick is a Java implementation of Kendrick.
 
 https://github.com/KendrickOrg/kendrick/wiki
