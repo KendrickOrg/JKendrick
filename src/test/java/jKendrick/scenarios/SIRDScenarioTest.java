@@ -1,7 +1,11 @@
 package jKendrick.scenarios;
 
 import jKendrick.core.Model;
+import jKendrick.core.Scenario;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +47,7 @@ public class SIRDScenarioTest {
         model.setParameter("mu", 0.05);
         model.setParameter("population", 1000);
 
+
         double[] initial = {999, 1, 0, 0};
         SIRDScenario scenario = new SIRDScenario(initial, model);
 
@@ -62,4 +67,36 @@ public class SIRDScenarioTest {
         assertEquals(1, after[2], 1e-6);   // R increased
         assertEquals(0, after[3], 1e-6);   // D unchanged
     }
+    @Test
+    void testFastInfectionAndHighMortality() {
+        Model model = new Model();
+        model.setParameter("beta", 0.9);  // Transmission très élevée
+        model.setParameter("gamma", 0.1); // Guérison normale
+        model.setParameter("mu", 0.5);    // Mortalité élevée
+        model.setParameter("population", 1000);
+        List<Scenario.Transition> Transitions=
+                Arrays.asList(
+                        new Scenario.Transition("S", "I"),
+                        new Scenario.Transition("I", "R"),
+                        new Scenario.Transition("I", "D")
+                );
+
+        double[] initial = {999, 1, 0, 0};
+        SIRDScenario scenario = new SIRDScenario(initial, model);
+
+        double[] y = {999, 1, 0, 0};
+        double[] yDot = new double[4];
+        scenario.computeDerivatives(0.0, y, yDot);
+
+        // S doit diminuer rapidement
+        assertTrue(yDot[0] < 0);
+
+        // I doit augmenter rapidement
+        assertTrue(yDot[1] > 0);
+
+        // D doit augmenter très rapidement
+        assertTrue(yDot[3] > 0);
+        assertEquals(Transitions ,scenario.getTransitions());
+    }
+
 }

@@ -96,6 +96,18 @@ public abstract class Scenario implements FirstOrderDifferentialEquations {
             this.from = from;
             this.to = to;
         }
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            Transition that = (Transition) obj;
+            return this.from.equals(that.from) && this.to.equals(that.to);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to);
+        }
     }
 
     public void reset() {

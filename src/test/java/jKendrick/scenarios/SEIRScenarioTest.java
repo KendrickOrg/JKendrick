@@ -1,7 +1,11 @@
 package jKendrick.scenarios;
 
 import jKendrick.core.Model;
+import jKendrick.core.Scenario;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,4 +66,40 @@ public class SEIRScenarioTest {
         assertEquals(5 + 1, after[2], 1e-6); // I increased
         assertEquals(0, after[3], 1e-6);     // R unchanged
     }
+    @Test
+    void testScenarioEvolutionOverTime() {
+        Model model = new Model();
+        model.setParameter("beta", 0.3);
+        model.setParameter("gamma", 0.1);
+        model.setParameter("sigma", 0.2);
+        model.setParameter("population", 1000);
+       List<Scenario.Transition> Transitions =
+         Arrays.asList(
+                    new Scenario.Transition("S", "E"),
+                    new Scenario.Transition("E", "I"),
+                    new Scenario.Transition("I", "R")
+            );
+        double[] initial = {990, 5, 5, 0}; // S, E, I, R
+        SEIRScenario scenario = new SEIRScenario(initial, model);
+
+        double[] y = {990, 5, 5, 0};
+        double[] yDot = new double[4];
+
+        //évolution sur 10 pas de temps & pas de 0.1
+        double dt = 0.1;
+        for (int step = 0; step < 10; step++) {
+            scenario.computeDerivatives(0.0, y, yDot);
+            for (int i = 0; i < 4; i++) {
+                y[i] += yDot[i] * dt;
+            }
+        }
+
+
+        assertTrue(y[0] < 990); // S a diminué
+        assertTrue(y[1] >= 0);  // E est positif
+        assertTrue(y[2] > 5);   // I a augmenté
+        assertTrue(y[3] > 0);   // R a augmenté
+        assertEquals(Transitions,scenario.getTransitions());
+    }
+
 }
