@@ -28,6 +28,7 @@ public class SimulationTest {
         });
     }
 
+
     @Test
     void testSimulationStepConsistency() {
         Model model = new Model();
@@ -42,6 +43,6 @@ public class SimulationTest {
         sim.simulate();
 
         double[][] result = solver.getResult();
-        assertEquals(101, result.length); // from 0.0 to 10.0 with step 0.1
+        assertEquals(101, result.length); // 0.0 -> 10.0 with step 0.1
     }
 }

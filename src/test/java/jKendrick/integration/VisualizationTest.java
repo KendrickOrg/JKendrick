@@ -16,7 +16,6 @@ public class VisualizationTest {
         double[] times = new double[]{0, 1, 2, 3, 4};
         List<String> labels = List.of("S", "I", "R");
 
-        // Remplissage de données factices
         for (int i = 0; i < result.length; i++) {
             result[i][0] = 900 - i * 10;
             result[i][1] = 100 + i * 5;
@@ -25,6 +24,7 @@ public class VisualizationTest {
 
         assertDoesNotThrow(() -> viz.getChart(result, times, labels, "Test Visualization - Single Run"));
     }
+
 
     @Test
     void testChartRenderMultiRun() {
