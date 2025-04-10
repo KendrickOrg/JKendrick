@@ -28,7 +28,7 @@ public class SIRScenarioTest {
         scenario.computeDerivatives(0.0, y, yDot);
 
         assertTrue(yDot[0] < 0);  // dS/dt < 0
-        assertTrue(yDot[1] > 0);  // dI/dt > 0 (at least initially)
+        assertTrue(yDot[1] > 0);  // dI/dt > 0
         assertEquals(10, yDot[2]);  // dR/dt = gamma * I = 0.1 * 100 = 10
     }
 

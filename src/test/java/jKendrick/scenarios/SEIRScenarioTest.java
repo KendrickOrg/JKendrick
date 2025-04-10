@@ -29,11 +29,12 @@ public class SEIRScenarioTest {
         double[] yDot = new double[4];
         scenario.computeDerivatives(0.0, y, yDot);
 
-        assertTrue(yDot[0] < 0);  // S should decrease
-        assertTrue(yDot[1] > 0);  // E should increase then decrease
-        assertTrue(yDot[2] > 0);  // I should increase then decrease
-        assertTrue(yDot[3] > 0);  // R should increase
+        assertTrue(yDot[0] < 0);  // S decrease
+        assertTrue(yDot[1] > 0);  // E increase then decrease
+        assertTrue(yDot[2] > 0);  // I increase then decrease
+        assertTrue(yDot[3] > 0);  // R increase
     }
+
 
     @Test
     void testTransitionAndRates() {
@@ -43,7 +44,7 @@ public class SEIRScenarioTest {
         model.setParameter("sigma", 0.2);
         model.setParameter("population", 1000);
 
-        double[] initial = {990, 5, 5, 0}; // S, E, I, R
+        double[] initial = {990, 5, 5, 0};
         SEIRScenario scenario = new SEIRScenario(initial, model);
 
         double rateSE = scenario.getRate("S", "E");

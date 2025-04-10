@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ModelTest {
-
     @Test
     void testSetAndGetParameter() {
         Model model = new Model();
@@ -24,7 +23,7 @@ public class ModelTest {
     @Test
     void testGetUnknownParameterReturnsZero() {
         Model model = new Model();
-        assertEquals(0.0, model.getParameter("unknownParam"));
+        assertEquals(0.0, model.getParameter("blablabla"));
     }
 
 }

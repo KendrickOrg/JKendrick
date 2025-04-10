@@ -29,10 +29,11 @@ public class SIRDScenarioTest {
         double[] yDot = new double[4];
         scenario.computeDerivatives(0.0, y, yDot);
 
-        assertTrue(yDot[0] < 0); // S should decrease
-        assertTrue(yDot[2] > 0); // R should increase
-        assertTrue(yDot[3] > 0); // D should increase
+        assertTrue(yDot[0] < 0); // S decrease
+        assertTrue(yDot[2] > 0); // R increase
+        assertTrue(yDot[3] > 0); // D increase
     }
+
 
     @Test
     void testTransitionAndRate() {
