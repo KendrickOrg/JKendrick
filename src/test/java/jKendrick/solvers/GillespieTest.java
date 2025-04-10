@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GillespieTest {
-
     @Test
     void testMultiRunDimensions() {
         Model model = new Model();
@@ -27,7 +26,7 @@ public class GillespieTest {
         double[][][] results = solver.getMultiRunResult();
         assertEquals(runs, results.length);
         assertEquals((int) (end / step) + 1, results[0].length);
-        assertEquals(3, results[0][0].length); // S, I, R
+        assertEquals(3, results[0][0].length);
     }
 
     @Test
