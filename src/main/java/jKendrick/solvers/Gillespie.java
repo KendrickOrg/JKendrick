@@ -20,6 +20,9 @@ public class Gillespie implements ISolver {
         this.nbRuns = nbRuns;
     }
 
+    /**
+     * Méthode principale qui exécute l'algorithme de Gillespie pour résoudre la simulation.
+     */
     @Override
     public void solve() {
         int steps = (int) (end / step) + 1;
@@ -29,17 +32,18 @@ public class Gillespie implements ISolver {
         for (int run = 0; run < nbRuns; run++) {
             scenario.reset();
             double[] current = scenario.getCardinalities().clone();
-            double[][] result = new double[steps][nbCompartments];
+            double[][] result = new double[steps][nbCompartments]; // Tableau pour stocker les résultats de toutes les simulations
+
 
             double time = 0.0;
             int index = 0;
             Random rand = new Random(run);
-
+            // Sauvegarde l'état initial
             result[index++] = normalize(current);
 
             while (time < end && index < steps) {
                 List<Map<String, String>> events = scenario.getPossibleEvents();
-                double[] rates = new double[events.size()];
+                double[] rates = new double[events.size()]; // Taux associés à chaque événement
                 double totalRate = 0;
 
                 for (int i = 0; i < events.size(); i++) {
@@ -50,10 +54,11 @@ public class Gillespie implements ISolver {
 
                 if (totalRate <= 0) break;
 
+                // Calcul du temps d'attente pour l'événement suivant (méthode de Gillespie)
                 double tau = -Math.log(rand.nextDouble()) / totalRate;
                 time += tau;
 
-                double threshold = rand.nextDouble() * totalRate;
+                double threshold = rand.nextDouble() * totalRate; // Sélection aléatoire d'un événement
                 double sum = 0;
                 for (int i = 0; i < events.size(); i++) {
                     sum += rates[i];
@@ -63,7 +68,7 @@ public class Gillespie implements ISolver {
                         break;
                     }
                 }
-
+                // Enregistrer les résultats pour ce pas de temps
                 while (index < steps && index * step < time) {
                     result[index++] = normalize(scenario.getCardinalities());
                 }
@@ -77,10 +82,16 @@ public class Gillespie implements ISolver {
         }
     }
 
-    private double[] normalize(double[] array) {
+
+    /**
+     * Méthode pour normaliser un tableau de données en fonction de la population totale.
+     * @param array Le tableau à normaliser.
+     * @return Le tableau normalisé.
+     */
+      private double[] normalize(double[] array) {
         double pop = scenario.getModel().getParameter("population");
         double[] norm = new double[array.length];
-        for (int i = 0; i < array.length; i++) norm[i] = array[i] / pop;
+        for (int i = 0; i < array.length; i++) norm[i] = array[i] / pop;// Normaliser chaque compartiment
         return norm;
     }
 
@@ -95,10 +106,13 @@ public class Gillespie implements ISolver {
     @Override public double[] getTimes() {
         int len = allRuns[0].length;
         double[] times = new double[len];
-        for (int i = 0; i < len; i++) times[i] = i * step;
+        for (int i = 0; i < len; i++) times[i] = i * step; // Temps pour chaque pas de la simulation
         return times;
     }
-
+    /**
+     * Récupère le chemin médian parmi toutes les simulations.
+     * @return Le résultat de la simulation médiane.
+     */
     private double[][] getMedianPath() {
         int medianIndex = nbRuns / 2;
         return allRuns[medianIndex];

@@ -37,9 +37,22 @@ public abstract class Scenario implements FirstOrderDifferentialEquations {
 
     public abstract List<Transition> getTransitions();
 
+
+    /**
+     * Méthode abstraite pour calculer les dérivées des compartiments à chaque instant.
+     * @param t Le temps courant dans la simulation.
+     * @param y Le tableau des valeurs actuelles des compartiments (S, E, I, R).
+     * @param yDot Le tableau dans lequel seront stockées les dérivées des compartiments.
+     */
     @Override
     public abstract void computeDerivatives(double t, double[] y, double[] yDot);
 
+
+
+    /**
+     * Retourne une liste des événements possibles dans le scénario (c'est-à-dire les transitions).
+     * @return Une liste de cartes contenant les transitions avec les compartiments d'origine et de destination.
+     */
     public List<Map<String, String>> getPossibleEvents() {
         List<Transition> transitions = getTransitions();
         List<Map<String, String>> result = new ArrayList<>();

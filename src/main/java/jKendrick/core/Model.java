@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Model {
+
     private final Map<String, Double> parameters;
 
     public Model() {

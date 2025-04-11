@@ -42,7 +42,7 @@ public class TauLeap implements ISolver {
 
                 for (Map<String, String> event : events) {
                     double rate = scenario.getRate(event.get("from"), event.get("to"));
-                    int n = poisson.poissonSample(rate * step);
+                    int n = poisson.poissonSample(rate * step);// Tirer un échantillon de Poisson pour déterminer combien de fois l'événement se produit
 
                     for (int k = 0; k < n; k++) {
                         scenario.transition(event.get("from"), event.get("to"));
