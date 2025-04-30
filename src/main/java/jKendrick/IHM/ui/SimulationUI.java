@@ -7,10 +7,12 @@ import jKendrick.integration.Simulation;
 import jKendrick.integration.Visualization;
 import jKendrick.scenarios.*;
 import jKendrick.solvers.*;
+import org.knowm.xchart.XYChart;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +21,8 @@ public class SimulationUI extends JFrame {
     private JTextField betaField, gammaField, sigmaField, muField, stepField, endField;
     private JTextArea logArea;
     private final Visualization viz = new Visualization();
+
+    private XYChart lastChart;
 
     private static final Map<String, double[]> populationMap = new HashMap<>();
 
@@ -65,17 +69,26 @@ public class SimulationUI extends JFrame {
 
         JButton runButton = new JButton("Lancer la simulation");
         runButton.addActionListener(this::runSimulation);
-        runButton.setPreferredSize(new Dimension(40, 40));
-        runButton.setBackground(Color.GREEN);// Taille plus grande et visible
+        runButton.setBackground(Color.GREEN);
 
+        // Nouveau bouton pour sauvegarder en PNG
+        JButton saveButton = new JButton("Sauvegarder en PNG");
+        saveButton.addActionListener(this::saveChartAsPNG);
+        saveButton.setBackground(Color.BLUE);
+        saveButton.setForeground(Color.WHITE);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(runButton);
+        buttonPanel.add(saveButton);
 
         logArea = new JTextArea();
         logArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(logArea);
 
-        add(inputPanel, BorderLayout.NORTH);
-        add(runButton, BorderLayout.CENTER);
-        add(scrollPane, BorderLayout.SOUTH);
+        setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+        add(inputPanel);
+        add(buttonPanel); // Ajouter le panneau avec les deux boutons
+        add(scrollPane);
     }
 
     private void runSimulation(ActionEvent e) {
@@ -116,6 +129,81 @@ public class SimulationUI extends JFrame {
 
         logArea.append("Simulation " + selectedScenario + " avec " + selectedSolver + "\n");
         new Simulation(solver, viz, selectedScenario + " - " + selectedSolver).simulate();
+        String title = selectedScenario + " - " + selectedSolver;
+        if (solver.isStochastic()) {
+            lastChart = createStochasticChart(solver.getMultiRunResult(), solver.getTimes(), solver.getLabels(), title);
+        } else {
+            lastChart = createDeterministicChart(solver.getResult(), solver.getTimes(), solver.getLabels(), title);
+        }
+
+    }
+    private XYChart createDeterministicChart(double[][] results, double[] xData, java.util.List<String> labels, String title) {
+        XYChart chart = viz.buildChart(title);
+        for (int i = 0; i < labels.size(); i++) {
+            double[] yData = new double[results.length];
+            for (int j = 0; j < results.length; j++) {
+                yData[j] = results[j][i];
+            }
+            chart.addSeries(labels.get(i), xData, yData)
+                    .setLineColor(viz.getColor(labels.get(i))); // Suppose que getColor est accessible
+        }
+        return chart;
+    }
+
+    private XYChart createStochasticChart(double[][][] multiRunResults, double[] xData, java.util.List<String> labels, String title) {
+        XYChart chart = viz.buildChart(title);
+        int nbRuns = multiRunResults.length;
+        int nbSteps = multiRunResults[0].length;
+
+        // Transparent runs
+        for (int run = 0; run < nbRuns; run++) {
+            for (int c = 0; c < labels.size(); c++) {
+                double[] yData = new double[nbSteps];
+                for (int t = 0; t < nbSteps; t++) {
+                    yData[t] = multiRunResults[run][t][c];
+                }
+                org.knowm.xchart.XYSeries s = chart.addSeries(labels.get(c) + "-run" + run, xData, yData);
+                s.setLineColor(new Color(100, 100, 100, 20));
+                s.setMarkerColor(new Color(100, 100, 100, 20));
+                s.setShowInLegend(false);
+            }
+        }
+
+        // Median path
+        int medianRun = nbRuns - 1;
+        for (int c = 0; c < labels.size(); c++) {
+            double[] yData = new double[nbSteps];
+            for (int t = 0; t < nbSteps; t++) {
+                yData[t] = multiRunResults[medianRun][t][c];
+            }
+            chart.addSeries(labels.get(c), xData, yData)
+                    .setLineColor(viz.getColor(labels.get(c)));
+        }
+        return chart;
+    }
+    private void saveChartAsPNG(ActionEvent e) {
+        if (lastChart == null) {
+            JOptionPane.showMessageDialog(this, "Aucune simulation n'a été exécutée.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Sauvegarder le graphique en PNG");
+        fileChooser.setSelectedFile(new File(lastChart.getTitle() + ".png"));
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                File file = fileChooser.getSelectedFile();
+                if (!file.getName().endsWith(".png")) {
+                    file = new File(file.getAbsolutePath() + ".png");
+                }
+                org.knowm.xchart.BitmapEncoder.saveBitmap(lastChart, file.getAbsolutePath(), org.knowm.xchart.BitmapEncoder.BitmapFormat.PNG);
+                logArea.append("Graphique sauvegardé : " + file.getAbsolutePath() + "\n");
+            } catch (Exception ex) {
+                logArea.append("Erreur lors de la sauvegarde : " + ex.getMessage() + "\n");
+                JOptionPane.showMessageDialog(this, "Erreur lors de la sauvegarde du graphique.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     public static void main(String[] args) {

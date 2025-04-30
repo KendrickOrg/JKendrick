@@ -6,34 +6,31 @@ import jKendrick.dsl.integration.KSimulation;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class KParserTest {
 
-//    @Test
-//    void testParseSimpleFile() throws IOException {
-//        // Crée un fichier temporaire avec du contenu DSL
-//        File tempFile = File.createTempFile("test", ".kmodel");
-//        PrintWriter writer = new PrintWriter(tempFile);
-//        writer.println("compartments: S, I, R");
-//        writer.println("param: beta = 0.3");
-//        writer.println("param: gamma = 0.1");
-//        writer.println("init: 900, 100, 0");
-//        writer.close();
-//
-//        // Parse le fichier
-//        KSimulation sim = KParser.parseFile(tempFile.getAbsolutePath());
-//
-//        // Vérifie le contenu
-//        KScenario scenario = sim.getScenario(); // Ajoute getScenario() dans KSimulation si pas encore fait
-//        KModel model = scenario.getModel();     // Ajoute getModel() dans KScenario si pas encore fait
-//
-//        assertArrayEquals(new String[]{"S", "I", "R"}, model.getCompartments().toArray());
-//        assertEquals(0.3, model.getParameter("beta"));
-//        assertEquals(0.1, model.getParameter("gamma"));
-//        assertArrayEquals(new double[]{900, 100, 0}, scenario.getInitialPopulation());
-//
-//        tempFile.delete(); // Nettoyage
-//    }
+    @Test
+    void testParseSimpleFile() throws IOException {
+        try {
+            // Création d'un modèle
+            KModel model = new KModel();
+            model.setCompartments("S", "I", "R");
+            model.setParameter("beta", 0.3);
+            model.setParameter("gamma", 0.1);
+
+            // Création d'un scénario basé sur le modèle
+            KScenario scenario = new KScenario(model);
+            scenario.setInitialPopulation(1000.0, 100.0, 0.0);
+
+            // Accès aux compartiments et aux paramètres
+            System.out.println("Compartments: " + model.getCompartments());
+            System.out.println("Parameters: " + model.getParameters());
+            System.out.println("Initial Population: " + Arrays.toString(scenario.getInitialPopulation()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

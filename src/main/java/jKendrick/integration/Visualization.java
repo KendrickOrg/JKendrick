@@ -63,7 +63,7 @@ public class Visualization {
         showChart(chart);
     }
 
-    private XYChart buildChart(String title) {
+    public XYChart buildChart(String title) {
         XYChart chart = new XYChartBuilder()
                 .width(800)
                 .height(600)
@@ -104,7 +104,7 @@ public class Visualization {
         });
     }
 
-    private Color getColor(String label) {
+    public Color getColor(String label) {
         if ("S".equals(label) || "Susceptible".equals(label)) {
             return Color.BLUE;
         } else if ("I".equals(label) || "Infected".equals(label)) {
