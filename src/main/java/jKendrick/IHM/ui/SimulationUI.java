@@ -7,12 +7,14 @@ import jKendrick.integration.Simulation;
 import jKendrick.integration.Visualization;
 import jKendrick.scenarios.*;
 import jKendrick.solvers.*;
-import org.knowm.xchart.XYChart;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,8 +23,6 @@ public class SimulationUI extends JFrame {
     private JTextField betaField, gammaField, sigmaField, muField, stepField, endField;
     private JTextArea logArea;
     private final Visualization viz = new Visualization();
-
-    private XYChart lastChart;
 
     private static final Map<String, double[]> populationMap = new HashMap<>();
 
@@ -39,6 +39,7 @@ public class SimulationUI extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // Panneau pour les champs de saisie
         JPanel inputPanel = new JPanel(new GridLayout(9, 2));
         scenarioBox = new JComboBox<>(new String[]{"SIR", "SIS", "SIRD", "SEIR"});
         solverBox = new JComboBox<>(new String[]{"RK4", "Gillespie", "TauLeap"});
@@ -54,11 +55,11 @@ public class SimulationUI extends JFrame {
         inputPanel.add(scenarioBox);
         inputPanel.add(new JLabel("Solveur:"));
         inputPanel.add(solverBox);
-        inputPanel.add(new JLabel(" Taux de transmission Beta:"));
+        inputPanel.add(new JLabel("Taux de transmission Beta:"));
         inputPanel.add(betaField);
         inputPanel.add(new JLabel("Taux de guérison Gamma:"));
         inputPanel.add(gammaField);
-        inputPanel.add(new JLabel("Taux de progression de la maladie  Sigma:"));
+        inputPanel.add(new JLabel("Taux de progression de la maladie Sigma:"));
         inputPanel.add(sigmaField);
         inputPanel.add(new JLabel("Taux de mortalité Mu:"));
         inputPanel.add(muField);
@@ -67,27 +68,32 @@ public class SimulationUI extends JFrame {
         inputPanel.add(new JLabel("Fin:"));
         inputPanel.add(endField);
 
+        // Bouton pour lancer la simulation
         JButton runButton = new JButton("Lancer la simulation");
         runButton.addActionListener(this::runSimulation);
         runButton.setBackground(Color.GREEN);
 
-        // Nouveau bouton pour sauvegarder en PNG
-        JButton saveButton = new JButton("Sauvegarder en PNG");
-        saveButton.addActionListener(this::saveChartAsPNG);
-        saveButton.setBackground(Color.BLUE);
-        saveButton.setForeground(Color.WHITE);
+        // Bouton pour générer le fichier Kendrick
+        JButton generateKendrickButton = new JButton("Générer fichier Kendrick");
+        generateKendrickButton.addActionListener(this::generateKendrickFile);
+        generateKendrickButton.setBackground(Color.BLUE);
+        generateKendrickButton.setForeground(Color.WHITE);
 
+        // Panneau pour les boutons
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(runButton);
-        buttonPanel.add(saveButton);
+        buttonPanel.add(generateKendrickButton);
+
+        // Zone de journalisation
 
         logArea = new JTextArea();
         logArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(logArea);
 
+        // Disposition de l'interface
         setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
         add(inputPanel);
-        add(buttonPanel); // Ajouter le panneau avec les deux boutons
+        add(buttonPanel);
         add(scrollPane);
     }
 
@@ -129,81 +135,163 @@ public class SimulationUI extends JFrame {
 
         logArea.append("Simulation " + selectedScenario + " avec " + selectedSolver + "\n");
         new Simulation(solver, viz, selectedScenario + " - " + selectedSolver).simulate();
-        String title = selectedScenario + " - " + selectedSolver;
-        if (solver.isStochastic()) {
-            lastChart = createStochasticChart(solver.getMultiRunResult(), solver.getTimes(), solver.getLabels(), title);
-        } else {
-            lastChart = createDeterministicChart(solver.getResult(), solver.getTimes(), solver.getLabels(), title);
-        }
-
-    }
-    private XYChart createDeterministicChart(double[][] results, double[] xData, java.util.List<String> labels, String title) {
-        XYChart chart = viz.buildChart(title);
-        for (int i = 0; i < labels.size(); i++) {
-            double[] yData = new double[results.length];
-            for (int j = 0; j < results.length; j++) {
-                yData[j] = results[j][i];
-            }
-            chart.addSeries(labels.get(i), xData, yData)
-                    .setLineColor(viz.getColor(labels.get(i))); // Suppose que getColor est accessible
-        }
-        return chart;
     }
 
-    private XYChart createStochasticChart(double[][][] multiRunResults, double[] xData, java.util.List<String> labels, String title) {
-        XYChart chart = viz.buildChart(title);
-        int nbRuns = multiRunResults.length;
-        int nbSteps = multiRunResults[0].length;
+    private void generateKendrickFile(ActionEvent e) {
+        // Étape 2 : Collecter et valider les données
+        String selectedScenario = (String) scenarioBox.getSelectedItem();
+        String selectedSolver = (String) solverBox.getSelectedItem();
 
-        // Transparent runs
-        for (int run = 0; run < nbRuns; run++) {
-            for (int c = 0; c < labels.size(); c++) {
-                double[] yData = new double[nbSteps];
-                for (int t = 0; t < nbSteps; t++) {
-                    yData[t] = multiRunResults[run][t][c];
-                }
-                org.knowm.xchart.XYSeries s = chart.addSeries(labels.get(c) + "-run" + run, xData, yData);
-                s.setLineColor(new Color(100, 100, 100, 20));
-                s.setMarkerColor(new Color(100, 100, 100, 20));
-                s.setShowInLegend(false);
-            }
-        }
-
-        // Median path
-        int medianRun = nbRuns - 1;
-        for (int c = 0; c < labels.size(); c++) {
-            double[] yData = new double[nbSteps];
-            for (int t = 0; t < nbSteps; t++) {
-                yData[t] = multiRunResults[medianRun][t][c];
-            }
-            chart.addSeries(labels.get(c), xData, yData)
-                    .setLineColor(viz.getColor(labels.get(c)));
-        }
-        return chart;
-    }
-    private void saveChartAsPNG(ActionEvent e) {
-        if (lastChart == null) {
-            JOptionPane.showMessageDialog(this, "Aucune simulation n'a été exécutée.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        double beta, gamma, mu, sigma, step, end;
+        try {
+            beta = Double.parseDouble(betaField.getText());
+            gamma = Double.parseDouble(gammaField.getText());
+            mu = Double.parseDouble(muField.getText());
+            sigma = Double.parseDouble(sigmaField.getText());
+            step = Double.parseDouble(stepField.getText());
+            end = Double.parseDouble(endField.getText());
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez entrer des valeurs numériques valides.",
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            logArea.append("Erreur : Entrées non numériques\n");
             return;
         }
 
+        double[] population = populationMap.get(selectedScenario);
+
+        // Étape 3 : Générer le code Kendrick
+        String kendrickCode = generateKendrickCode(
+                selectedScenario, selectedSolver, beta, gamma, mu, sigma, step, end, population);
+
+        // Étape 4 : Sauvegarder dans un fichier
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Sauvegarder le graphique en PNG");
-        fileChooser.setSelectedFile(new File(lastChart.getTitle() + ".png"));
+        fileChooser.setDialogTitle("Sauvegarder le fichier Kendrick");
+        fileChooser.setSelectedFile(new File(selectedScenario + "_" + selectedSolver + ".kendrick"));
 
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                File file = fileChooser.getSelectedFile();
-                if (!file.getName().endsWith(".png")) {
-                    file = new File(file.getAbsolutePath() + ".png");
-                }
-                org.knowm.xchart.BitmapEncoder.saveBitmap(lastChart, file.getAbsolutePath(), org.knowm.xchart.BitmapEncoder.BitmapFormat.PNG);
-                logArea.append("Graphique sauvegardé : " + file.getAbsolutePath() + "\n");
-            } catch (Exception ex) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().endsWith(".kendrick")) {
+                file = new File(file.getAbsolutePath() + ".kendrick");
+            }
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write(kendrickCode);
+                logArea.append("Fichier Kendrick sauvegardé : " + file.getAbsolutePath() + "\n");
+            } catch (IOException ex) {
                 logArea.append("Erreur lors de la sauvegarde : " + ex.getMessage() + "\n");
-                JOptionPane.showMessageDialog(this, "Erreur lors de la sauvegarde du graphique.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Erreur lors de la sauvegarde du fichier.",
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private String generateKendrickCode(String scenario, String solver,
+                                        double beta, double gamma, double mu, double sigma,
+                                        double step, double end, double[] population) {
+        StringBuilder sb = new StringBuilder();
+
+        // Commentaire d'en-tête
+        sb.append("# Modèle épidémiologique ").append(scenario).append("\n\n");
+
+        // Définir le modèle
+        sb.append("model ").append(scenario).append("\n");
+
+        // Compartiments
+        sb.append("  compartments {\n");
+        switch (scenario) {
+            case "SIR":
+                sb.append("    S, I, R\n");
+                break;
+            case "SIS":
+                sb.append("    S, I\n");
+                break;
+            case "SIRD":
+                sb.append("    S, I, R, D\n");
+                break;
+            case "SEIR":
+                sb.append("    S, E, I, R\n");
+                break;
+        }
+        sb.append("  }\n\n");
+
+        // Paramètres
+        sb.append("  parameters {\n");
+        sb.append("    beta = ").append(String.format("%.3f", beta)).append("\n");
+        sb.append("    gamma = ").append(String.format("%.3f", gamma)).append("\n");
+        if (scenario.equals("SIRD")) {
+            sb.append("    mu = ").append(String.format("%.3f", mu)).append("\n");
+        }
+        if (scenario.equals("SEIR")) {
+            sb.append("    sigma = ").append(String.format("%.3f", sigma)).append("\n");
+        }
+        sb.append("  }\n\n");
+
+        // Populations initiales
+        sb.append("  initial {\n");
+        switch (scenario) {
+            case "SIR":
+            case "SIS":
+                sb.append("    S = ").append((int) population[0]).append("\n");
+                sb.append("    I = ").append((int) population[1]).append("\n");
+                if (scenario.equals("SIR")) {
+                    sb.append("    R = ").append((int) population[2]).append("\n");
+                }
+                break;
+            case "SIRD":
+                sb.append("    S = ").append((int) population[0]).append("\n");
+                sb.append("    I = ").append((int) population[1]).append("\n");
+                sb.append("    R = ").append((int) population[2]).append("\n");
+                sb.append("    D = ").append((int) population[3]).append("\n");
+                break;
+            case "SEIR":
+                sb.append("    S = ").append((int) population[0]).append("\n");
+                sb.append("    E = ").append((int) population[1]).append("\n");
+                sb.append("    I = ").append((int) population[2]).append("\n");
+                sb.append("    R = ").append((int) population[3]).append("\n");
+                break;
+        }
+        sb.append("  }\n\n");
+
+        // Transitions
+        sb.append("  transitions {\n");
+        switch (scenario) {
+            case "SIR":
+                sb.append("    S -> I : beta * S * I / population\n");
+                sb.append("    I -> R : gamma * I\n");
+                break;
+            case "SIS":
+                sb.append("    S -> I : beta * S * I / population\n");
+                sb.append("    I -> S : gamma * I\n");
+                break;
+            case "SIRD":
+                sb.append("    S -> I : beta * S * I / population\n");
+                sb.append("    I -> R : gamma * I\n");
+                sb.append("    I -> D : mu * I\n");
+                break;
+            case "SEIR":
+                sb.append("    S -> E : beta * S * I / population\n");
+                sb.append("    E -> I : sigma * E\n");
+                sb.append("    I -> R : gamma * I\n");
+                break;
+        }
+        sb.append("  }\n\n");
+
+        // Simulation
+        sb.append("simulation ").append(scenario).append("_").append(solver).append("\n");
+        sb.append("  solver = ").append(solver).append("\n");
+        sb.append("  step = ").append(String.format("%.3f", step)).append("\n");
+        sb.append("  end = ").append(String.format("%.1f", end)).append("\n");
+        if (solver.equals("Gillespie")) {
+            sb.append("  runs = 20\n");
+        } else if (solver.equals("TauLeap")) {
+            sb.append("  runs = 100\n");
+        }
+        sb.append("end\n");
+
+        return sb.toString();
     }
 
     public static void main(String[] args) {
