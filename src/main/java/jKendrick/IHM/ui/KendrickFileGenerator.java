@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Locale;
 
 public class KendrickFileGenerator {
     private final SimulationUI ui;
@@ -17,14 +18,14 @@ public class KendrickFileGenerator {
         try {
             String selectedScenario = ui.getSelectedScenario();
             String selectedSolver = ui.getSelectedSolver();
-            double beta = Double.parseDouble(ui.getBetaText());
-            double gamma = Double.parseDouble(ui.getGammaText());
-            double mu = Double.parseDouble(ui.getMuText());
-            double sigma = Double.parseDouble(ui.getSigmaText());
-            double step = Double.parseDouble(ui.getStepText());
-            double end = Double.parseDouble(ui.getEndText());
+            double beta = Double.parseDouble(ui.getBetaText().replace(",", "."));
+            double gamma = Double.parseDouble(ui.getGammaText().replace(",", "."));
+            double mu = Double.parseDouble(ui.getMuText().replace(",", "."));
+            double sigma = Double.parseDouble(ui.getSigmaText().replace(",", "."));
+            double step = Double.parseDouble(ui.getStepText().replace(",", "."));
+            double end = Double.parseDouble(ui.getEndText().replace(",", "."));
 
-            double[] population = SimulationUI.populationMap.get(selectedScenario); // Accès via champ statique
+            double[] population = SimulationUI.populationMap.get(selectedScenario);
 
             String kendrickCode = generateKendrickCode(
                     selectedScenario, selectedSolver, beta, gamma, mu, sigma, step, end, population);
@@ -51,7 +52,7 @@ public class KendrickFileGenerator {
             }
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(ui,
-                    "Veuillez entrer des valeurs numériques valides.",
+                    "Veuillez entrer des valeurs numériques valides (utilisez un point comme séparateur décimal).",
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
             ui.getLogArea().append("Erreur : Entrées non numériques\n");
@@ -152,20 +153,20 @@ public class KendrickFileGenerator {
         }
 
         sb.append("    parameter_values:\n");
-        sb.append("        beta := ").append(String.format("%.3f", beta)).append(";\n");
-        sb.append("        gamma := ").append(String.format("%.3f", gamma)).append(";\n");
+        sb.append("        beta := ").append(String.format(Locale.US, "%.3f", beta)).append(";\n");
+        sb.append("        gamma := ").append(String.format(Locale.US, "%.3f", gamma)).append(";\n");
         if (scenario.equals("SIRD")) {
-            sb.append("        mu := ").append(String.format("%.3f", mu)).append(";\n");
+            sb.append("        mu := ").append(String.format(Locale.US, "%.3f", mu)).append(";\n");
         }
         if (scenario.equals("SEIR")) {
-            sb.append("        sigma := ").append(String.format("%.3f", sigma)).append(";\n");
+            sb.append("        sigma := ").append(String.format(Locale.US, "%.3f", sigma)).append(";\n");
         }
         sb.append("\n");
 
         sb.append("simulation ").append(scenario).append("_").append(solver).append("\n");
         sb.append("    solver: ").append(solver).append(";\n");
-        sb.append("    step: ").append(String.format("%.3f", step)).append(";\n");
-        sb.append("    end: ").append(String.format("%.1f", end)).append(";\n");
+        sb.append("    step: ").append(String.format(Locale.US, "%.3f", step)).append(";\n");
+        sb.append("    end: ").append(String.format(Locale.US, "%.1f", end)).append(";\n");
         if (solver.equals("Gillespie")) {
             sb.append("    runs: 20;\n");
         } else if (solver.equals("TauLeap")) {

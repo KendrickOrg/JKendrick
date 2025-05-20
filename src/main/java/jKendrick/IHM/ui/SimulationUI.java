@@ -10,7 +10,7 @@ public class SimulationUI extends JFrame {
     private JTextField betaField, gammaField, sigmaField, muField, stepField, endField;
     private JTextArea logArea;
     private final SimulationController controller;
-    static final Map<String, double[]> populationMap = new HashMap<>();
+    public static final Map<String, double[]> populationMap = new HashMap<>(); // Public pour accès
 
     static {
         populationMap.put("SIR", new double[]{900, 100, 0});
@@ -63,9 +63,21 @@ public class SimulationUI extends JFrame {
         generateKendrickButton.setBackground(Color.BLUE);
         generateKendrickButton.setForeground(Color.WHITE);
 
+        JButton importKendrickButton = new JButton("Importer fichier Kendrick");
+        importKendrickButton.addActionListener(e -> controller.importKendrickFile());
+        importKendrickButton.setBackground(Color.ORANGE);
+        importKendrickButton.setForeground(Color.WHITE);
+
+        JButton savePngButton = new JButton("Sauvegarder en PNG");
+        savePngButton.addActionListener(e -> controller.saveChartAsPNG());
+        savePngButton.setBackground(Color.BLUE);
+        savePngButton.setForeground(Color.WHITE);
+
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(runButton);
         buttonPanel.add(generateKendrickButton);
+        buttonPanel.add(importKendrickButton);
+        buttonPanel.add(savePngButton);
 
         logArea = new JTextArea();
         logArea.setEditable(false);
@@ -77,7 +89,7 @@ public class SimulationUI extends JFrame {
         add(scrollPane);
     }
 
-    // Getters pour les champs
+    // Getters
     public String getSelectedScenario() { return (String) scenarioBox.getSelectedItem(); }
     public String getSelectedSolver() { return (String) solverBox.getSelectedItem(); }
     public String getBetaText() { return betaField.getText(); }
@@ -87,6 +99,16 @@ public class SimulationUI extends JFrame {
     public String getStepText() { return stepField.getText(); }
     public String getEndText() { return endField.getText(); }
     public JTextArea getLogArea() { return logArea; }
+
+    // Setters
+    public void setSelectedScenario(String scenario) { scenarioBox.setSelectedItem(scenario); }
+    public void setSelectedSolver(String solver) { solverBox.setSelectedItem(solver); }
+    public void setBetaText(String text) { betaField.setText(text); }
+    public void setGammaText(String text) { gammaField.setText(text); }
+    public void setMuText(String text) { muField.setText(text); }
+    public void setSigmaText(String text) { sigmaField.setText(text); }
+    public void setStepText(String text) { stepField.setText(text); }
+    public void setEndText(String text) { endField.setText(text); }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new SimulationUI().setVisible(true));
