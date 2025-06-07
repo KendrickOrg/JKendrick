@@ -1,4 +1,4 @@
-package jKendrick.IHM.ui;
+package jKendrick.IHM.ui.KendrickFile;
 
 public class ModelParameters {
     private final String scenario;

@@ -1,4 +1,6 @@
-package jKendrick.IHM.ui;
+package jKendrick.IHM.ui.KendrickFile;
+
+import jKendrick.IHM.ui.SimulationUI;
 
 import javax.swing.*;
 import java.io.BufferedWriter;

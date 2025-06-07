@@ -1,4 +1,4 @@
-package jKendrick.IHM.ui;
+package jKendrick.IHM.ui.KendrickFile;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

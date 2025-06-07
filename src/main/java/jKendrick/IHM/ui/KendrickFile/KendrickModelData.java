@@ -1,4 +1,4 @@
-package jKendrick.IHM.ui;
+package jKendrick.IHM.ui.KendrickFile;
 
 import java.util.HashMap;
 import java.util.Map;

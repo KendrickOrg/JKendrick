@@ -1,5 +1,8 @@
 package jKendrick.IHM.ui;
 
+import jKendrick.IHM.ui.KendrickFile.KendrickFileGenerator;
+import jKendrick.IHM.ui.KendrickFile.KendrickFileParser;
+import jKendrick.IHM.ui.KendrickFile.KendrickModelData;
 import jKendrick.core.ISolver;
 import jKendrick.core.Model;
 import jKendrick.core.Scenario;
@@ -25,7 +28,10 @@ public class SimulationController {
     private final Map<String, double[]> populationMap;
     private final KendrickFileGenerator fileGenerator;
     private final KendrickFileParser fileParser;
-    private XYChart lastChart; // Pour stocker le graphique
+    private XYChart lastChart;
+    private double[] currentIValues;
+    private double currentN;
+    private double[] lastValues; // Pour stocker les dernières valeurs des groupes
 
     public SimulationController(SimulationUI ui, Map<String, double[]> populationMap) {
         this.ui = ui;
@@ -33,6 +39,8 @@ public class SimulationController {
         this.populationMap = populationMap;
         this.fileGenerator = new KendrickFileGenerator(ui);
         this.fileParser = new KendrickFileParser();
+        this.currentIValues = new double[]{populationMap.get("SIR")[1]}; // I initial pour SIR
+        this.currentN = Arrays.stream(populationMap.get("SIR")).sum(); // N total
     }
 
     public void runSimulation() {
@@ -47,22 +55,34 @@ public class SimulationController {
             double end = Double.parseDouble(ui.getEndText().replace(",", "."));
 
             double[] population = populationMap.get(selectedScenario);
-            int populationTotal = (int) Arrays.stream(population).sum();
+            currentN = Arrays.stream(population).sum();
 
             Model model = new Model();
             model.setParameter("beta", beta);
             model.setParameter("gamma", gamma);
             model.setParameter("mu", mu);
             model.setParameter("sigma", sigma);
-            model.setParameter("population", populationTotal);
+            model.setParameter("population", currentN);
 
-            Scenario scenario = switch (selectedScenario) {
-                case "SIR" -> new SIRScenario(population.clone(), model);
-                case "SIS" -> new SISScenario(population.clone(), model);
-                case "SIRD" -> new SIRDScenario(population.clone(), model);
-                case "SEIR" -> new SEIRScenario(population.clone(), model);
-                default -> throw new IllegalArgumentException("Scénario inconnu");
-            };
+            // Choisir le scénario selon le modèle
+            Scenario scenario;
+            int iIndex; // Index de I dans les résultats
+            String[] labels;
+            if ("SIR".equals(selectedScenario)) {
+                scenario = new SIRScenario(population.clone(), model);
+                iIndex = 1; // I est à l'index 1 dans SIR
+                labels = new String[]{"S", "I", "R"};
+            } else if ("SEIR".equals(selectedScenario)) {
+                scenario = new SEIRScenario(population.clone(), model);
+                iIndex = 2; // I est à l'index 2 dans SEIR
+                labels = new String[]{"S", "E", "I", "R"};
+            } else if ("SIS".equals(selectedScenario)) {
+                scenario = new SISScenario(population.clone(), model);
+                iIndex = 1; // I est à l'index 1 dans SIS
+                labels = new String[]{"S", "I"};
+            } else {
+                throw new IllegalArgumentException("Scénario inconnu");
+            }
 
             ISolver solver = switch (selectedSolver) {
                 case "RK4" -> new RKSolver(scenario, step, end);
@@ -75,57 +95,71 @@ public class SimulationController {
             Simulation simulation = new Simulation(solver, viz, selectedScenario + " - " + selectedSolver);
             simulation.simulate();
 
+            // Mettre à jour currentIValues et lastValues
+            double[][] results = solver.getResult();
+            currentIValues = new double[results.length];
+            lastValues = new double[labels.length];
+            for (int i = 0; i < results.length; i++) {
+                currentIValues[i] = results[i][iIndex];
+            }
+            // Récupérer les dernières valeurs de chaque groupe
+            for (int j = 0; j < labels.length; j++) {
+                lastValues[j] = results[results.length - 1][j];
+            }
+
+            // Afficher les dernières valeurs dans infoArea
+            StringBuilder infoText = new StringBuilder("Simulation terminée.\n");
+            for (int j = 0; j < labels.length; j++) {
+                infoText.append(labels[j]).append(" = ").append(String.format("%.0f", lastValues[j])).append("\n");
+            }
+            ui.getInfoArea().setText(infoText.toString());
+
             // Générer le graphique
             String title = selectedScenario + " - " + selectedSolver;
             XYChart chart = viz.buildChart(title);
             if (solver.isStochastic()) {
-                // Logique stochastique (inspirée de createStochasticChart)
                 double[][][] multiRunResults = solver.getMultiRunResult();
                 double[] xData = solver.getTimes();
-                java.util.List<String> labels = solver.getLabels();
+                java.util.List<String> labelsList = solver.getLabels();
                 int nbRuns = multiRunResults.length;
                 int nbSteps = multiRunResults[0].length;
 
-                // Runs transparents
                 for (int run = 0; run < nbRuns; run++) {
-                    for (int c = 0; c < labels.size(); c++) {
+                    for (int c = 0; c < labelsList.size(); c++) {
                         double[] yData = new double[nbSteps];
                         for (int t = 0; t < nbSteps; t++) {
                             yData[t] = multiRunResults[run][t][c];
                         }
-                        XYSeries s = chart.addSeries(labels.get(c) + "-run" + run, xData, yData);
+                        XYSeries s = chart.addSeries(labelsList.get(c) + "-run" + run, xData, yData);
                         s.setLineColor(new Color(100, 100, 100, 20));
                         s.setMarkerColor(new Color(100, 100, 100, 20));
                         s.setShowInLegend(false);
                     }
                 }
 
-                // Chemin médian
                 int medianRun = nbRuns - 1;
-                for (int c = 0; c < labels.size(); c++) {
+                for (int c = 0; c < labelsList.size(); c++) {
                     double[] yData = new double[nbSteps];
                     for (int t = 0; t < nbSteps; t++) {
                         yData[t] = multiRunResults[medianRun][t][c];
                     }
-                    chart.addSeries(labels.get(c), xData, yData)
-                            .setLineColor(viz.getColor(labels.get(c)));
+                    chart.addSeries(labelsList.get(c), xData, yData)
+                            .setLineColor(viz.getColor(labelsList.get(c)));
                 }
             } else {
-                // Logique déterministe
-                double[][] results = solver.getResult();
+                double[][] resultsDet = solver.getResult();
                 double[] xData = solver.getTimes();
-                java.util.List<String> labels = solver.getLabels();
-                for (int i = 0; i < labels.size(); i++) {
-                    double[] yData = new double[results.length];
-                    for (int j = 0; j < results.length; j++) {
-                        yData[j] = results[j][i];
+                java.util.List<String> labelsList = solver.getLabels();
+                for (int i = 0; i < labelsList.size(); i++) {
+                    double[] yData = new double[resultsDet.length];
+                    for (int j = 0; j < resultsDet.length; j++) {
+                        yData[j] = resultsDet[j][i];
                     }
-                    chart.addSeries(labels.get(i), xData, yData)
-                            .setLineColor(viz.getColor(labels.get(i)));
+                    chart.addSeries(labelsList.get(i), xData, yData)
+                            .setLineColor(viz.getColor(labelsList.get(i)));
                 }
             }
 
-            // Stocker le graphique
             lastChart = chart;
             ui.getLogArea().append("Graphique généré : " + title + "\n");
 
@@ -135,6 +169,9 @@ public class SimulationController {
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
             ui.getLogArea().append("Erreur : Entrées non numériques\n");
+        } catch (Exception ex) {
+            ui.getLogArea().append("Erreur lors de la simulation : " + ex.getMessage() + "\n");
+            JOptionPane.showMessageDialog(ui, "Erreur : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -190,9 +227,9 @@ public class SimulationController {
 
     private void updateUIFromData(KendrickModelData data) {
         String scenario = data.getScenario();
-        if (!Arrays.asList("SIR", "SIS", "SIRD", "SEIR").contains(scenario)) {
-            ui.getLogArea().append("Avertissement : Scénario inconnu (" + scenario + "), SIR sélectionné\n");
-            scenario = "SIR";
+        if (!Arrays.asList("SIR", "SEIR", "SIS").contains(scenario)) {
+            ui.getLogArea().append("Erreur : Scénario inconnu (" + scenario + ")\n");
+            return;
         }
         ui.setSelectedScenario(scenario);
 
@@ -203,17 +240,11 @@ public class SimulationController {
         }
         ui.setSelectedSolver(solver);
 
-        // Extraire des scalaires pour les champs, avec avertissement pour les données composites
         Map<String, Object> params = data.getParameters();
-        // Vérification pour beta
         Object betaObj = params.get("beta");
         if (betaObj instanceof double[] || betaObj instanceof double[][]) {
-            ui.getLogArea().append("Avertissement : beta est un vecteur/matrice, première valeur utilisée\n");
-        }
-        // Vérification pour gamma
-        Object gammaObj = params.get("gamma");
-        if (gammaObj instanceof double[] || gammaObj instanceof double[][]) {
-            ui.getLogArea().append("Avertissement : gamma est un vecteur/matrice, première valeur utilisée\n");
+            ui.getLogArea().append("Erreur : Paramètres composites non supportés\n");
+            return;
         }
         ui.setBetaText(String.format(Locale.US, "%.3f", data.getScalarParameter("beta", 0.3)));
         ui.setGammaText(String.format(Locale.US, "%.3f", data.getScalarParameter("gamma", 0.1)));
@@ -222,58 +253,42 @@ public class SimulationController {
         ui.setStepText(String.format(Locale.US, "%.3f", data.getStep()));
         ui.setEndText(String.format(Locale.US, "%.1f", data.getEnd()));
 
-        // Mettre à jour populationMap avec les vecteurs
         Map<String, Object> initialPop = data.getInitialPopulations();
         double[] population;
-        switch (scenario) {
-            case "SIR":
-                population = new double[]{
-                        data.getVectorPopulation("S", new double[]{900})[0],
-                        data.getVectorPopulation("I", new double[]{100})[0],
-                        data.getVectorPopulation("R", new double[]{0})[0]
-                };
-                Object sPop = initialPop.get("S");
-                if (sPop instanceof double[] && ((double[]) sPop).length > 1) {
-                    ui.getLogArea().append("Avertissement : Populations initiales composites, premières valeurs utilisées\n");
-                }
-                break;
-            case "SIS":
-                population = new double[]{
-                        data.getVectorPopulation("S", new double[]{999})[0],
-                        data.getVectorPopulation("I", new double[]{1})[0]
-                };
-                sPop = initialPop.get("S");
-                if (sPop instanceof double[] && ((double[]) sPop).length > 1) {
-                    ui.getLogArea().append("Avertissement : Populations initiales composites, premières valeurs utilisées\n");
-                }
-                break;
-            case "SIRD":
-                population = new double[]{
-                        data.getVectorPopulation("S", new double[]{999})[0],
-                        data.getVectorPopulation("I", new double[]{1})[0],
-                        data.getVectorPopulation("R", new double[]{0})[0],
-                        data.getVectorPopulation("D", new double[]{0})[0]
-                };
-                sPop = initialPop.get("S");
-                if (sPop instanceof double[] && ((double[]) sPop).length > 1) {
-                    ui.getLogArea().append("Avertissement : Populations initiales composites, premières valeurs utilisées\n");
-                }
-                break;
-            case "SEIR":
-                population = new double[]{
-                        data.getVectorPopulation("S", new double[]{990})[0],
-                        data.getVectorPopulation("E", new double[]{5})[0],
-                        data.getVectorPopulation("I", new double[]{5})[0],
-                        data.getVectorPopulation("R", new double[]{0})[0]
-                };
-                sPop = initialPop.get("S");
-                if (sPop instanceof double[] && ((double[]) sPop).length > 1) {
-                    ui.getLogArea().append("Avertissement : Populations initiales composites, premières valeurs utilisées\n");
-                }
-                break;
-            default:
-                population = populationMap.get("SIR");
+        if ("SIR".equals(scenario)) {
+            population = new double[]{
+                    data.getVectorPopulation("S", new double[]{900})[0],
+                    data.getVectorPopulation("I", new double[]{100})[0],
+                    data.getVectorPopulation("R", new double[]{0})[0]
+            };
+        } else if ("SEIR".equals(scenario)) {
+            population = new double[]{
+                    data.getVectorPopulation("S", new double[]{800})[0],
+                    data.getVectorPopulation("E", new double[]{100})[0],
+                    data.getVectorPopulation("I", new double[]{50})[0],
+                    data.getVectorPopulation("R", new double[]{0})[0]
+            };
+        } else if ("SIS".equals(scenario)) {
+            population = new double[]{
+                    data.getVectorPopulation("S", new double[]{900})[0],
+                    data.getVectorPopulation("I", new double[]{100})[0]
+            };
+        } else {
+            return;
+        }
+        Object sPop = initialPop.get("S");
+        if (sPop instanceof double[] && ((double[]) sPop).length > 1) {
+            ui.getLogArea().append("Erreur : Populations composites non supportées\n");
+            return;
         }
         populationMap.put(scenario, population);
+    }
+
+    public double[] getCurrentIValues() {
+        return currentIValues;
+    }
+
+    public double getCurrentN() {
+        return currentN;
     }
 }
