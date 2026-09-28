@@ -24,6 +24,50 @@ A ***scenario*** is a ground model, i.e. a model in which all parameters have be
 
 Since our models are stochastic automata they can be run using, say, Gillespie's algorithm or the faster Tau Leap, but their underlying ODEs can also be numerically solved using, for instance, RK4.
 
+## The Kendrick DSL front end (new syntax)
+
+The textual language is parsed by an ANTLR 4 grammar, `src/main/antlr4/jKendrick/dsl/grammar/Kendrick.g4`,
+which implements the *new* Kendrick syntax used by the paper
+"A Formal Approach to Separation of Concerns in Epidemiology Modeling" (see `kendrick models/SYNTAX.md`
+in the paper repository). The lexer, parser and visitor are generated at build time by the
+`antlr4-maven-plugin` into `target/generated-sources/antlr4` (package `jKendrick.dsl.grammar`); do not commit them.
+
+- `jKendrick.dsl.parser.KendrickParserFacade` -- text in, `Ast.Script` out; syntax errors are collected and
+  thrown together as a `KendrickSyntaxException` with `file:line:column` positions.
+- `jKendrick.dsl.ast.Ast` -- the abstract syntax: `KModel`, `Composition`, `Scenario`, `Simulation`,
+  `Visualization`, expressions (`Sum`, `Binary`, `Name`...), and `Indexed` names (`beta_ki` = base `beta`,
+  indices `[ki]`). The AST is purely syntactic: binding of index variables, attribute lookup, the tensor-sum
+  composition and the scenario assignment rules belong to the semantic layer, still to be written.
+- `src/test/resources/models/Model1..4.kendrick` -- the four models of the paper, parsed by
+  `KendrickParserFacadeTest` (`mvn test`).
+
+Grammar in one screen:
+
+    script        : entity+ EOF
+    entity        : 'KModel' ID clause (';' clause)* '.'
+                  | 'Composition' ID ('model:' STRING) (';' 'model:' STRING)* '.'
+                  | 'Scenario' ID 'on:' STRING (';' assignment)* '.'
+                  | 'Simulation' ID (KEYWORD literal) (';' KEYWORD literal)* '.'
+                  | 'Visualization' ID (KEYWORD literal) (';' KEYWORD literal)* '.'
+    clause        : 'attribute:' '#(' ID 'in' domain ')'
+                  | 'parameters:' '#(' ID+ ')'
+                  | 'equations:' '#(' equation ('.' equation)* '.'? ')'
+                  | 'transitions:' '#(' transition ('.' transition)* '.'? ')'
+                  | 'connectionMatrix:' '#(' ('#(' NUMBER+ ')')+ ')'
+                  | 'transitionRate:' '#(' expr ')'
+                  | KEYWORD '#(' expr ')'                       -- default formula of a parameter
+    domain        : '(' (ID | NUMBER)+ ')' | '(' 'range' NUMBER NUMBER ')'
+    equation      : KEYWORD 't' '=' expr                        -- S:t = ...
+    transition    : ID '--' expr '-->' ID
+    assignment    : 'var:' '#(' ('(' ID 'in' ID ')')+ ')'
+                  | KEYWORD (NUMBER | numberArray | '#(' expr ')')
+    expr          : '-' expr | expr ('*'|'/') expr | expr ('+'|'-') expr
+                  | 'sum_' '(' ID 'in' ID ')' expr              -- lowest precedence: the body extends to the right
+                  | ID '(' expr (',' expr)* ')' | ID | NUMBER | '(' expr ')'
+    KEYWORD       : [a-zA-Z][a-zA-Z0-9_]* ':'
+    ID            : [a-zA-Z][a-zA-Z0-9_]*
+    STRING        : '\'' ... '\''      COMMENT : '"' ... '"' (skipped)
+
 ## Publications
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
 

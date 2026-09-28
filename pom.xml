@@ -24,6 +24,11 @@
             <version>3.6.1</version>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.13.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.8.1</version>
@@ -33,7 +38,6 @@
 
     <build>
         <plugins>
-            <!-- Add plugins here -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -41,6 +45,30 @@
                     <source>14</source>
                     <target>14</target>
                 </configuration>
+            </plugin>
+            <!-- Generates the Kendrick DSL lexer/parser/visitor from src/main/antlr4/**/Kendrick.g4
+                 into target/generated-sources/antlr4 (package jKendrick.dsl.grammar). -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.13.2</version>
+                <configuration>
+                    <visitor>true</visitor>
+                    <listener>false</listener>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Runs the JUnit 5 tests with mvn test. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
         </plugins>
     </build>
