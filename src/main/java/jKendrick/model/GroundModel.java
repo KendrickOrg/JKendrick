@@ -28,9 +28,17 @@ public final class GroundModel {
     private final List<ComposedModel.Transition> transitions;
     /** Arguments of the Simulation entity (solver, from, to, step...), or empty. */
     public final Map<String, Ast.Literal> simulation;
+    /** Arguments of the Visualization entities, by entity name (plot, data, legends...), or empty. */
+    public final Map<String, Map<String, Ast.Literal>> visualizations;
 
     public GroundModel(String name, ComposedModel model, Map<String, ParameterValue> parameters,
                        Map<String, String> variables, double[] initialState, Map<String, Ast.Literal> simulation) {
+        this(name, model, parameters, variables, initialState, simulation, Collections.emptyMap());
+    }
+
+    public GroundModel(String name, ComposedModel model, Map<String, ParameterValue> parameters,
+                       Map<String, String> variables, double[] initialState, Map<String, Ast.Literal> simulation,
+                       Map<String, Map<String, Ast.Literal>> visualizations) {
         this.name = name;
         this.model = model;
         this.parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
@@ -38,6 +46,10 @@ public final class GroundModel {
         this.initialState = initialState.clone();
         this.transitions = model.transitions();
         this.simulation = Collections.unmodifiableMap(new LinkedHashMap<>(simulation));
+        Map<String, Map<String, Ast.Literal>> v = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Ast.Literal>> e : visualizations.entrySet())
+            v.put(e.getKey(), Collections.unmodifiableMap(new LinkedHashMap<>(e.getValue())));
+        this.visualizations = Collections.unmodifiableMap(v);
     }
 
     public double[] initialState() {

@@ -104,8 +104,9 @@ the same dynamics as the MATLAB systems written by hand.
 ## Running a script: solvers over the ground model
 
 `jKendrick.Kendrick` is the entry point of the pipeline (`load` a script, `build` the ground model, `run` its
-`Simulation` entity); as a program, `java -cp ... jKendrick.Kendrick model.kendrick [out.csv]` prints the totals
-per status and species at the end of the run and writes the trajectory as CSV.
+`Simulation` entity); as a program, `java -cp ... jKendrick.Kendrick model.kendrick [--csv out.csv] [--png out.png] [--show]`
+prints the totals per status and species at the end of the run, writes the trajectory as CSV, and draws
+the script's `Visualization` entities as PNG files or in windows.
 
 The solvers of package `jKendrick.simulation` work on a `GroundModel` and return `Trajectory` objects
 (times x compartments, with `aggregate("status", "species")` to sum over the other attributes):
@@ -124,6 +125,15 @@ The solvers of package `jKendrick.simulation` work on a `GroundModel` and return
 
 `SimulationRunner` reads the `Simulation` entity: `solver:` ('rungeKutta', 'gillespie', 'tauLeap'), `from:`,
 `to:`, `step:`, and for stochastic runs `runs:` and `seed:`; `substeps:` refines the integration or leap step.
+
+`VisualizationSpec` reads a `Visualization` entity: `plot: 'diagram'` (series against time, the only kind
+for now), `data: #(I_species)`, `legendTitle:`, `legends:`, `xLabel:`, and optionally `yLabel:` and
+`title:`. A data name is an attribute value followed by attribute names: `I_species` is one series per
+species, the infectious summed over the other attributes (zone...); `I` alone is the total; without
+`data:` there is one series per status. `legends:` renames the series in order. `ChartRenderer` is the
+only class that depends on XChart; with several stochastic runs it draws every run as a thin curve of its
+series' colour. `java -cp target/classes:... jKendrick.Kendrick src/test/resources/models/Model3.kendrick --png m3.png`
+gives the curves of the MATLAB `visualization.m` of the paper.
 
 The older solvers in `jKendrick.solvers` and the scenario classes in `jKendrick.scenarios` are the
 hand-written models used by the Swing UI; they do not use the DSL yet.

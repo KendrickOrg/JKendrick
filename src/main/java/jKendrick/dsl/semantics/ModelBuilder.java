@@ -87,8 +87,19 @@ public final class ModelBuilder {
 
         Map<String, Ast.Literal> simulation = new LinkedHashMap<>();
         for (Ast.Simulation sim : script.entitiesOf(Ast.Simulation.class)) simulation.putAll(sim.arguments);
+        Map<String, Map<String, Ast.Literal>> visualizations = new LinkedHashMap<>();
+        for (Ast.Visualization viz : script.entitiesOf(Ast.Visualization.class)) {
+            if (visualizations.put(viz.name, viz.arguments) != null)
+                throw new SemanticException("Visualization " + viz.name + " is defined twice");
+            Ast.Literal target = viz.arguments.get("for");
+            if (target != null && target.string != null && !script.entitiesOf(Ast.Simulation.class).isEmpty()) {
+                boolean found = false;
+                for (Ast.Simulation sim : script.entitiesOf(Ast.Simulation.class)) found |= sim.name.equals(target.string);
+                if (!found) throw new SemanticException("Visualization " + viz.name + " is for unknown Simulation '" + target.string + "'");
+            }
+        }
 
-        return new ScenarioBuilder(model, sc).build(simulation);
+        return new ScenarioBuilder(model, sc).build(simulation, visualizations);
     }
 
     // ------------------------------------------------------------------ concerns
@@ -201,7 +212,7 @@ public final class ModelBuilder {
             this.state = new double[model.compartments.size()];
         }
 
-        GroundModel build(Map<String, Ast.Literal> simulation) {
+        GroundModel build(Map<String, Ast.Literal> simulation, Map<String, Map<String, Ast.Literal>> visualizations) {
             for (Ast.Binding b : sc.bindings) {
                 if (b.variable.length() != 1)
                     throw new SemanticException(where + ": variable '" + b.variable + "' must be a single letter");
@@ -215,7 +226,7 @@ public final class ModelBuilder {
                 for (Map.Entry<String, Ast.Expr> f : c.parameterFormulas.entrySet())
                     parameters.put(f.getKey(), new ParameterValue.Formula(Collections.emptyList(), f.getValue(), c));
             for (Ast.Assignment a : sc.assignments) assign(a);
-            return new GroundModel(sc.name, model, parameters, variables, state, simulation);
+            return new GroundModel(sc.name, model, parameters, variables, state, simulation, visualizations);
         }
 
         private void assign(Ast.Assignment a) {
