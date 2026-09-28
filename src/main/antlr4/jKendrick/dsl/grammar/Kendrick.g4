@@ -133,6 +133,7 @@ expr
     | 'sum_' '(' var=ID 'in' attr=ID ')' expr                             # sumExpr
     | func=ID '(' expr (',' expr)* ')'                                    # callExpr
     | ID                                                                  # nameExpr
+    | 't'                                                                 # timeExpr
     | NUMBER                                                              # numberExpr
     | '(' expr ')'                                                        # parenExpr
     ;

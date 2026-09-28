@@ -230,8 +230,8 @@ public final class KendrickParserFacade {
         private static Ast.Expr expr(KendrickParser.ExprContext ctx) {
             if (ctx instanceof KendrickParser.NumberExprContext)
                 return new Ast.Num(Double.parseDouble(ctx.getText()));
-            if (ctx instanceof KendrickParser.NameExprContext)
-                return new Ast.Name(Ast.Indexed.parse(ctx.getText()));
+            if (ctx instanceof KendrickParser.NameExprContext || ctx instanceof KendrickParser.TimeExprContext)
+                return new Ast.Name(Ast.Indexed.parse(ctx.getText())); // the time is the name t
             if (ctx instanceof KendrickParser.ParenExprContext)
                 return expr(((KendrickParser.ParenExprContext) ctx).expr());
             if (ctx instanceof KendrickParser.NegExprContext)

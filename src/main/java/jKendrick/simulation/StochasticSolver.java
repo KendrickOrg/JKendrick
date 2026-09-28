@@ -42,16 +42,15 @@ public abstract class StochasticSolver implements Solver {
 
     protected abstract Trajectory run(GroundModel g, double from, double to, double step, Random random);
 
-    /** Propensities of all transitions in the current state. */
-    protected static double[] propensities(GroundModel g, List<ComposedModel.Transition> transitions, double t, double[] y) {
-        double[] a = new double[transitions.size()];
-        for (int i = 0; i < a.length; i++) a[i] = g.propensity(transitions.get(i), t, y);
-        return a;
+    /** Propensities of all transitions in the current state, into {@code a}. */
+    protected static void propensities(GroundModel g, double t, double[] y, double[] a) {
+        g.propensities(t, y, a);
     }
 
-    /** Applies one firing of a transition to the state. */
-    protected static void fire(GroundModel g, ComposedModel.Transition tr, double[] y, int times) {
-        if (tr.from != null) y[g.model.indexOf(tr.from)] -= times;
-        if (tr.to != null) y[g.model.indexOf(tr.to)] += times;
+    /** Applies {@code times} firings of the i-th transition to the state. */
+    protected static void fire(GroundModel g, int i, double[] y, int times) {
+        int from = g.source(i), to = g.target(i);
+        if (from >= 0) y[from] -= times;
+        if (to >= 0) y[to] += times;
     }
 }

@@ -26,6 +26,12 @@ public interface ParameterValue {
      */
     double at(List<String> refValues, Context ctx);
 
+    /**
+     * The value compiled for the context's compartment and environment (see {@link RateCompiler});
+     * a constant unless the parameter is a formula that depends on the state or the time.
+     */
+    Compiled compile(List<String> refValues, Context ctx, RateCompiler.Reads reads);
+
     /** How one declared index is resolved: by an attribute of the compartment or by a variable. */
     final class IndexSpec {
         public final String attribute;
@@ -55,6 +61,11 @@ public interface ParameterValue {
         @Override
         public double at(List<String> refValues, Context ctx) {
             return value;
+        }
+
+        @Override
+        public Compiled compile(List<String> refValues, Context ctx, RateCompiler.Reads reads) {
+            return new Compiled.Const(value);
         }
 
         @Override
@@ -94,6 +105,11 @@ public interface ParameterValue {
         }
 
         @Override
+        public Compiled compile(List<String> refValues, Context ctx, RateCompiler.Reads reads) {
+            return new Compiled.Const(at(refValues, ctx));
+        }
+
+        @Override
         public String toString() {
             return "table" + specs;
         }
@@ -117,9 +133,22 @@ public interface ParameterValue {
             List<String> key = refValues.isEmpty() ? Resolution.declaredValues(specs, ctx) : refValues;
             if (key.size() != specs.size())
                 throw new IllegalStateException("formula indexed by " + specs + " referenced with " + key.size() + " indices");
+            return Evaluator.eval(expr, bound(key, ctx));
+        }
+
+        @Override
+        public Compiled compile(List<String> refValues, Context ctx, RateCompiler.Reads reads) {
+            List<String> key = refValues.isEmpty() ? Resolution.declaredValues(specs, ctx) : refValues;
+            if (key.size() != specs.size())
+                throw new IllegalStateException("formula indexed by " + specs + " referenced with " + key.size() + " indices");
+            return RateCompiler.compile(expr, bound(key, ctx), reads);
+        }
+
+        /** The context of the formula's body: its variables bound to the key, its owner. */
+        private Context bound(List<String> key, Context ctx) {
             Map<String, String> env = new HashMap<>(ctx.env);
             for (int d = 0; d < specs.size(); d++) env.put(specs.get(d).variable, key.get(d));
-            return Evaluator.eval(expr, ctx.withEnv(env).withOwner(owner));
+            return ctx.withEnv(env).withOwner(owner);
         }
 
         @Override

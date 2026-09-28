@@ -33,17 +33,16 @@ public final class TauLeapSolver extends StochasticSolver {
         double[][] states = new double[times.length][];
         states[0] = y.clone();
         double tau = step / substeps;
+        double[] a = new double[transitions.size()];
+        double[] delta = new double[y.length];
         for (int i = 1; i < times.length; i++) {
             double t = times[i - 1];
             for (int s = 0; s < substeps; s++) {
-                double[] a = propensities(g, transitions, t, y);
-                double[] delta = new double[y.length];
+                propensities(g, t, y, a);
+                java.util.Arrays.fill(delta, 0);
                 for (int k = 0; k < a.length; k++) {
                     if (a[k] <= 0) continue;
-                    ComposedModel.Transition tr = transitions.get(k);
-                    int n = poisson(a[k] * tau, random);
-                    if (tr.from != null) delta[g.model.indexOf(tr.from)] -= n;
-                    if (tr.to != null) delta[g.model.indexOf(tr.to)] += n;
+                    fire(g, k, delta, poisson(a[k] * tau, random));
                 }
                 for (int j = 0; j < y.length; j++) y[j] = Math.max(0, y[j] + delta[j]);
                 t += tau;

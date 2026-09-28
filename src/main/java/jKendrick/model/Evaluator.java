@@ -151,6 +151,18 @@ public final class Evaluator {
 
     private static double cardinality(Map<String, String> constraints, Ast.Indexed n, Context ctx, boolean isN) {
         ComposedModel m = ctx.ground.model;
+        double total = 0;
+        for (Compartment c : m.matching(constraints(constraints, n, ctx, isN))) total += ctx.state[m.indexOf(c)];
+        return total;
+    }
+
+    /**
+     * The compartments a cardinality name denotes, as constraints attribute -> value, given the
+     * initial constraints (the owner attribute's value for an attribute value, none for N).
+     * This depends on the compartment and the environment of the context only, not on its state.
+     */
+    static Map<String, String> constraints(Map<String, String> constraints, Ast.Indexed n, Context ctx, boolean isN) {
+        ComposedModel m = ctx.ground.model;
         if (n.hasIndices()) {
             constrain(constraints, n, ctx);
         } else {
@@ -166,8 +178,6 @@ public final class Evaluator {
                 if (!constraints.containsKey(a.name) && !a.name.equals(free))
                     constraints.put(a.name, ctx.current.get(a.name));
         }
-        double total = 0;
-        for (Compartment c : m.matching(constraints)) total += ctx.state[m.indexOf(c)];
-        return total;
+        return constraints;
     }
 }

@@ -23,8 +23,10 @@ public final class GillespieSolver extends StochasticSolver {
         states[0] = y.clone();
         int next = 1;
         double t = from;
+        double[] a = new double[transitions.size()];
+        propensities(g, t, y, a);
+        int[] timed = g.timeDependent();
         while (next < times.length) {
-            double[] a = propensities(g, transitions, t, y);
             double total = 0;
             for (double v : a) total += v;
             if (total <= 0) break; // absorbing state: nothing happens any more
@@ -37,7 +39,12 @@ public final class GillespieSolver extends StochasticSolver {
                 acc += a[i];
                 if (u < acc) { chosen = i; break; }
             }
-            fire(g, transitions.get(chosen), y, 1);
+            fire(g, chosen, y, 1);
+            // only the propensities that read a changed compartment (or the time) need recomputing
+            int src = g.source(chosen), dst = g.target(chosen);
+            if (src >= 0) for (int i : g.dependents(src)) a[i] = g.propensity(i, t, y);
+            if (dst >= 0) for (int i : g.dependents(dst)) a[i] = g.propensity(i, t, y);
+            for (int i : timed) a[i] = g.propensity(i, t, y);
         }
         while (next < times.length) states[next++] = y.clone();
         return new Trajectory(g, times, states);

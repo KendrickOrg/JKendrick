@@ -63,7 +63,7 @@ Grammar in one screen:
                   | KEYWORD (NUMBER | numberArray | '#(' expr ')')
     expr          : '-' expr | expr ('*'|'/') expr | expr ('+'|'-') expr
                   | 'sum_' '(' ID 'in' ID ')' expr              -- lowest precedence: the body extends to the right
-                  | ID '(' expr (',' expr)* ')' | ID | NUMBER | '(' expr ')'
+                  | ID '(' expr (',' expr)* ')' | ID | 't' | NUMBER | '(' expr ')'
     KEYWORD       : [a-zA-Z][a-zA-Z0-9_]* ':'
     ID            : [a-zA-Z][a-zA-Z0-9_]*
     STRING        : '\'' ... '\''      COMMENT : '"' ... '"' (skipped)
@@ -91,7 +91,14 @@ meta-model (package `jKendrick.model`), which is how the paper defines the seman
   reference supplies or for the current compartment; `N` and attribute values (`S`, `I_ip_free`) are
   cardinalities, localised to the current compartment when unindexed (all other attributes fixed, except
   the owner concern's attribute for `N`) and summed over the attributes not mentioned when indexed;
-  `sum_ (i in a) e` sums over the values of `a`.
+  `sum_ (i in a) e` sums over the values of `a`; `t` is the time (`beta*(1+cos(t))`).
+- `RateCompiler` compiles an expression, once per transition, into a closure over `(t, state)` that
+  means exactly what `Evaluator` computes (`RateCompilerTest` checks both agree on the four models):
+  tables become constants, cardinalities sums over precomputed compartment indices, `sum_` is unrolled and
+  formulas are inlined with their variables bound. The solvers use these compiled rates, and the
+  compiler records which compartments each rate reads, so that Gillespie recomputes after an event only
+  the propensities that can have changed. Model 3 (275 000 individuals, 130 transitions) runs 550 days
+  of Gillespie in about 5 s instead of 20 minutes with the interpreter.
 - `GroundModel.derivatives(t, y)` is the right-hand side of the composed ODE system, produced
   automatically: for each compartment, the localised equation of every ODE-defined concern, plus the
   flows of every transition of the composed automaton.
