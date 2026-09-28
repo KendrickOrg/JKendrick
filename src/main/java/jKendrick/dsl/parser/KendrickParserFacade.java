@@ -83,6 +83,12 @@ public final class KendrickParserFacade {
     // ------------------------------------------------------------------ parse tree -> AST
 
     private static final class AstBuilder extends KendrickBaseVisitor<Object> {
+        /** Records where a node starts in the script (ANTLR columns are 0-based). */
+        @SuppressWarnings("unchecked")
+        private static <N extends Ast.Node> N at(N node, org.antlr.v4.runtime.ParserRuleContext ctx) {
+            return (N) node.at(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine() + 1);
+        }
+
 
         @Override
         public Ast.Script visitScript(KendrickParser.ScriptContext ctx) {
@@ -116,10 +122,10 @@ public final class KendrickParserFacade {
                     for (TerminalNode id : ((KendrickParser.ParametersClauseContext) c).ID()) parameters.add(id.getText());
                 } else if (c instanceof KendrickParser.EquationsClauseContext) {
                     for (KendrickParser.EquationContext eq : ((KendrickParser.EquationsClauseContext) c).equation())
-                        equations.add(new Ast.Equation(keywordName(eq.compartment.getText()), expr(eq.expr())));
+                        equations.add(at(new Ast.Equation(keywordName(eq.compartment.getText()), expr(eq.expr())), eq));
                 } else if (c instanceof KendrickParser.TransitionsClauseContext) {
                     for (KendrickParser.TransitionContext t : ((KendrickParser.TransitionsClauseContext) c).transition())
-                        transitions.add(new Ast.Transition(t.from.getText(), expr(t.rate), t.to.getText()));
+                        transitions.add(at(new Ast.Transition(t.from.getText(), expr(t.rate), t.to.getText()), t));
                 } else if (c instanceof KendrickParser.ConnectionMatrixClauseContext) {
                     List<KendrickParser.RowContext> rows = ((KendrickParser.ConnectionMatrixClauseContext) c).row();
                     matrix = new double[rows.size()][];
@@ -135,7 +141,7 @@ public final class KendrickParserFacade {
                     formulas.put(keywordName(p.KEYWORD().getText()), expr(p.expr()));
                 }
             }
-            return new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, transitionRate);
+            return at(new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, transitionRate), ctx);
         }
 
         private static List<String> domainValues(KendrickParser.DomainContext d) {
@@ -156,7 +162,7 @@ public final class KendrickParserFacade {
         public Ast.Composition visitComposition(KendrickParser.CompositionContext ctx) {
             List<String> models = new ArrayList<>();
             for (KendrickParser.ModelRefContext m : ctx.modelRef()) models.add(string(m.STRING()));
-            return new Ast.Composition(ctx.name.getText(), models);
+            return at(new Ast.Composition(ctx.name.getText(), models), ctx);
         }
 
         // ---- Scenario
@@ -171,17 +177,17 @@ public final class KendrickParserFacade {
                         bindings.add(new Ast.Binding(b.var.getText(), b.attr.getText()));
                 } else if (a instanceof KendrickParser.ArrayAssignmentContext) {
                     KendrickParser.ArrayAssignmentContext v = (KendrickParser.ArrayAssignmentContext) a;
-                    assignments.add(new Ast.ValueAssignment(target(v.KEYWORD()), numberArray(v.numberArray())));
+                    assignments.add(at(new Ast.ValueAssignment(target(v.KEYWORD()), numberArray(v.numberArray())), v));
                 } else if (a instanceof KendrickParser.ScalarAssignmentContext) {
                     KendrickParser.ScalarAssignmentContext v = (KendrickParser.ScalarAssignmentContext) a;
-                    assignments.add(new Ast.ValueAssignment(target(v.KEYWORD()),
-                            new Ast.NumberArray(Double.parseDouble(v.NUMBER().getText()))));
+                    assignments.add(at(new Ast.ValueAssignment(target(v.KEYWORD()),
+                            new Ast.NumberArray(Double.parseDouble(v.NUMBER().getText()))), v));
                 } else {
                     KendrickParser.FormulaAssignmentContext f = (KendrickParser.FormulaAssignmentContext) a;
-                    assignments.add(new Ast.FormulaAssignment(target(f.KEYWORD()), expr(f.expr())));
+                    assignments.add(at(new Ast.FormulaAssignment(target(f.KEYWORD()), expr(f.expr())), f));
                 }
             }
-            return new Ast.Scenario(ctx.name.getText(), unquote(ctx.target.getText()), bindings, assignments);
+            return at(new Ast.Scenario(ctx.name.getText(), unquote(ctx.target.getText()), bindings, assignments), ctx);
         }
 
         private static Ast.Indexed target(TerminalNode keyword) {
@@ -202,12 +208,12 @@ public final class KendrickParserFacade {
 
         @Override
         public Ast.Simulation visitSimulation(KendrickParser.SimulationContext ctx) {
-            return new Ast.Simulation(ctx.name.getText(), keywordArgs(ctx.keywordArg()));
+            return at(new Ast.Simulation(ctx.name.getText(), keywordArgs(ctx.keywordArg())), ctx);
         }
 
         @Override
         public Ast.Visualization visitVisualization(KendrickParser.VisualizationContext ctx) {
-            return new Ast.Visualization(ctx.name.getText(), keywordArgs(ctx.keywordArg()));
+            return at(new Ast.Visualization(ctx.name.getText(), keywordArgs(ctx.keywordArg())), ctx);
         }
 
         private static Map<String, Ast.Literal> keywordArgs(List<KendrickParser.KeywordArgContext> args) {

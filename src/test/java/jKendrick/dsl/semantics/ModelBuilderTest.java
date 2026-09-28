@@ -251,6 +251,25 @@ class ModelBuilderTest {
     }
 
     @Test
+    void semanticErrorsAreLocatedInTheScript() {
+        // the faulty assignment is on line 4, column 22; the faulty transition on line 1, column 77
+        String script = "KModel A attribute: #(status in (S I)); parameters: #(beta); transitions: #(S -- beta --> I).\n"
+                + "Composition C model: 'A'.\n"
+                + "Scenario Sc on: 'C';\n"
+                + "    beta: 1;         gamma: 1.\n";
+        SemanticException ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(script)));
+        assertTrue(ex.getMessage().endsWith("(line 4, column 22)"), ex.getMessage());
+        String bad = script.replace("S -- beta --> I", "S -- beta --> J").replace("gamma: 1", "beta: 2");
+        ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(bad)));
+        assertTrue(ex.getMessage().contains("transition to J"), ex.getMessage());
+        assertTrue(ex.getMessage().endsWith("(line 1, column 77)"), ex.getMessage());
+        // an error about the entity as a whole points at the entity
+        String twice = script.replace("Composition C model: 'A'.", "KModel A attribute: #(x in (a b)).\nComposition C model: 'A'.");
+        ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(twice)));
+        assertTrue(ex.getMessage().endsWith("defined twice (line 2, column 1)"), ex.getMessage());
+    }
+
+    @Test
     void scriptShapeIsChecked() {
         List<String> bad = List.of(
                 "KModel A attribute: #(status in (S I)).\nScenario Sc on: 'C'.\n",             // no composition

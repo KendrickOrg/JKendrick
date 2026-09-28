@@ -35,7 +35,25 @@ public final class Ast {
     }
 
     /** Common part of the five entity kinds. */
-    public abstract static class Entity {
+    /** A node that knows where it comes from in the script (1-based line and column, or 0 when unknown). */
+    public abstract static class Node {
+        public int line;
+        public int column;
+
+        /** Sets the position; returns this for chaining. */
+        public Node at(int line, int column) {
+            this.line = line;
+            this.column = column;
+            return this;
+        }
+
+        /** {@code " (line 12, column 5)"} or empty when the position is unknown. */
+        public String position() {
+            return line > 0 ? " (line " + line + ", column " + column + ")" : "";
+        }
+    }
+
+    public abstract static class Entity extends Node {
         public final String name;
         protected Entity(String name) { this.name = name; }
     }
@@ -82,14 +100,14 @@ public final class Ast {
     }
 
     /** {@code S:t = expr}. */
-    public static final class Equation {
+    public static final class Equation extends Node {
         public final String compartment;
         public final Expr rhs;
         public Equation(String compartment, Expr rhs) { this.compartment = compartment; this.rhs = rhs; }
     }
 
     /** {@code from -- rate --> to}. */
-    public static final class Transition {
+    public static final class Transition extends Node {
         public final String from;
         public final Expr rate;
         public final String to;
@@ -131,7 +149,7 @@ public final class Ast {
     }
 
     /** One assignment of a scenario: a value or a formula for an indexed name. */
-    public abstract static class Assignment {
+    public abstract static class Assignment extends Node {
         /** The left-hand side, e.g. {@code beta_ki}, {@code S_birds_1}, {@code lambda_pk}. */
         public final Indexed target;
         protected Assignment(Indexed target) { this.target = target; }

@@ -142,8 +142,18 @@ only class that depends on XChart; with several stochastic runs it draws every r
 series' colour. `java -cp target/classes:... jKendrick.Kendrick src/test/resources/models/Model3.kendrick --png m3.png`
 gives the curves of the MATLAB `visualization.m` of the paper.
 
-The older solvers in `jKendrick.solvers` and the scenario classes in `jKendrick.scenarios` are the
-hand-written models used by the Swing UI; they do not use the DSL yet.
+Semantic errors (`SemanticException`) name the entity and end with the position of the faulty
+assignment, transition, equation or entity in the script (`Scenario Sc: 'gamma' is neither a parameter
+nor a compartment of C (line 4, column 22)`); syntax errors are reported as `file:line:column: message`.
+
+## The Swing front end
+
+`jKendrick.ui.KendrickStudio [script.kendrick]` opens a script editor, runs it (Run button or
+Ctrl+Enter, in the background) and shows the chart of its `Visualization` entity next to the editor,
+with the totals per status and species in the log; errors are logged with their position and the
+caret is moved to the first one. The chart can be saved as PNG. This is the front end of the DSL;
+the older `jKendrick.IHM.ui` application, `jKendrick.solvers` and `jKendrick.scenarios` are the
+hand-written SIR/SEIR/SIS models of the first prototype and do not use the DSL.
 
 ## Publications
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)

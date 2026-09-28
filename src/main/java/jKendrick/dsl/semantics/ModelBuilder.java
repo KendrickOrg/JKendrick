@@ -54,8 +54,12 @@ public final class ModelBuilder {
         // ---- concerns
         Map<String, Concern> concerns = new LinkedHashMap<>();
         for (Ast.KModel k : script.entitiesOf(Ast.KModel.class)) {
-            if (concerns.containsKey(k.name)) throw new SemanticException("KModel " + k.name + " is defined twice");
-            concerns.put(k.name, concern(k));
+            if (concerns.containsKey(k.name)) throw new SemanticException("KModel " + k.name + " is defined twice").at(k);
+            try {
+                concerns.put(k.name, concern(k));
+            } catch (SemanticException e) {
+                throw e.at(k);
+            }
         }
 
         // ---- composition
@@ -66,15 +70,15 @@ public final class ModelBuilder {
         List<Concern> members = new ArrayList<>();
         for (String name : comp.models) {
             Concern c = concerns.get(name);
-            if (c == null) throw new SemanticException("Composition " + comp.name + ": unknown KModel '" + name + "'");
-            if (members.contains(c)) throw new SemanticException("Composition " + comp.name + ": " + name + " is composed twice");
+            if (c == null) throw new SemanticException("Composition " + comp.name + ": unknown KModel '" + name + "'").at(comp);
+            if (members.contains(c)) throw new SemanticException("Composition " + comp.name + ": " + name + " is composed twice").at(comp);
             members.add(c);
         }
         ComposedModel model;
         try {
             model = new ComposedModel(comp.name, members);
         } catch (IllegalArgumentException e) {
-            throw new SemanticException("Composition " + comp.name + ": " + e.getMessage());
+            throw new SemanticException("Composition " + comp.name + ": " + e.getMessage()).at(comp);
         }
 
         // ---- scenario
@@ -83,23 +87,27 @@ public final class ModelBuilder {
             throw new SemanticException("a script must contain exactly one Scenario, found " + scenarios.size());
         Ast.Scenario sc = scenarios.get(0);
         if (!sc.composition.equals(comp.name))
-            throw new SemanticException("Scenario " + sc.name + " is on '" + sc.composition + "' but the Composition is " + comp.name);
+            throw new SemanticException("Scenario " + sc.name + " is on '" + sc.composition + "' but the Composition is " + comp.name).at(sc);
 
         Map<String, Ast.Literal> simulation = new LinkedHashMap<>();
         for (Ast.Simulation sim : script.entitiesOf(Ast.Simulation.class)) simulation.putAll(sim.arguments);
         Map<String, Map<String, Ast.Literal>> visualizations = new LinkedHashMap<>();
         for (Ast.Visualization viz : script.entitiesOf(Ast.Visualization.class)) {
             if (visualizations.put(viz.name, viz.arguments) != null)
-                throw new SemanticException("Visualization " + viz.name + " is defined twice");
+                throw new SemanticException("Visualization " + viz.name + " is defined twice").at(viz);
             Ast.Literal target = viz.arguments.get("for");
             if (target != null && target.string != null && !script.entitiesOf(Ast.Simulation.class).isEmpty()) {
                 boolean found = false;
                 for (Ast.Simulation sim : script.entitiesOf(Ast.Simulation.class)) found |= sim.name.equals(target.string);
-                if (!found) throw new SemanticException("Visualization " + viz.name + " is for unknown Simulation '" + target.string + "'");
+                if (!found) throw new SemanticException("Visualization " + viz.name + " is for unknown Simulation '" + target.string + "'").at(viz);
             }
         }
 
-        return new ScenarioBuilder(model, sc).build(simulation, visualizations);
+        try {
+            return new ScenarioBuilder(model, sc).build(simulation, visualizations);
+        } catch (SemanticException e) {
+            throw e.at(sc);
+        }
     }
 
     // ------------------------------------------------------------------ concerns
@@ -112,9 +120,9 @@ public final class ModelBuilder {
         Map<String, Ast.Expr> equations = new LinkedHashMap<>();
         for (Ast.Equation e : k.equations) {
             if (!values.contains(e.compartment))
-                throw new SemanticException(where + ": equation for " + e.compartment + ", which is not a value of its attribute");
+                throw new SemanticException(where + ": equation for " + e.compartment + ", which is not a value of its attribute").at(e);
             if (equations.put(e.compartment, e.rhs) != null)
-                throw new SemanticException(where + ": two equations for " + e.compartment);
+                throw new SemanticException(where + ": two equations for " + e.compartment).at(e);
         }
 
         List<Concern.LocalTransition> transitions = new ArrayList<>();
@@ -122,14 +130,14 @@ public final class ModelBuilder {
             // 'Empty' is the outside (births and deaths); the attribute's name as a source means every value
             String to = t.to.equals(OUTSIDE) ? null : t.to;
             if (to != null && !values.contains(to))
-                throw new SemanticException(where + ": transition to " + to + ", which is not a value of its attribute");
+                throw new SemanticException(where + ": transition to " + to + ", which is not a value of its attribute").at(t);
             List<String> froms = new ArrayList<>();
             if (t.from.equals(OUTSIDE)) froms.add(null);
             else if (attribute != null && t.from.equals(attribute.name)) froms.addAll(attribute.values);
             else if (values.contains(t.from)) froms.add(t.from);
-            else throw new SemanticException(where + ": transition from " + t.from + ", which is not a value of its attribute");
+            else throw new SemanticException(where + ": transition from " + t.from + ", which is not a value of its attribute").at(t);
             for (String from : froms) {
-                if (from == null && to == null) throw new SemanticException(where + ": transition from Empty to Empty");
+                if (from == null && to == null) throw new SemanticException(where + ": transition from Empty to Empty").at(t);
                 transitions.add(new Concern.LocalTransition(from, t.rate, to));
             }
         }
@@ -225,7 +233,13 @@ public final class ModelBuilder {
             for (Concern c : model.concerns)
                 for (Map.Entry<String, Ast.Expr> f : c.parameterFormulas.entrySet())
                     parameters.put(f.getKey(), new ParameterValue.Formula(Collections.emptyList(), f.getValue(), c));
-            for (Ast.Assignment a : sc.assignments) assign(a);
+            for (Ast.Assignment a : sc.assignments) {
+                try {
+                    assign(a);
+                } catch (SemanticException e) {
+                    throw e.at(a);
+                }
+            }
             return new GroundModel(sc.name, model, parameters, variables, state, simulation, visualizations);
         }
 
