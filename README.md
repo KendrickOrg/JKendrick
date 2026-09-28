@@ -68,6 +68,39 @@ Grammar in one screen:
     ID            : [a-zA-Z][a-zA-Z0-9_]*
     STRING        : '\'' ... '\''      COMMENT : '"' ... '"' (skipped)
 
+## The semantic layer: from the AST to the mathematical meta-model
+
+`jKendrick.dsl.semantics.ModelBuilder` gives a script its meaning by building the objects of the
+meta-model (package `jKendrick.model`), which is how the paper defines the semantics of Kendrick:
+
+- a `KModel` denotes a `Concern`: an `Attribute` (an equivalence relation on the population, whose
+  values are the states of the concern's automaton), the parameters it introduces, and its dynamics
+  as local transitions between attribute values (`transitions:`, or a `connectionMatrix:` with a
+  `transitionRate:`) or as one equation per value (`equations:`). A concern may only name its own
+  parameters and values (plus `N` and `t`): `ModelBuilder` rejects structural dependencies between concerns.
+- a `Composition` denotes a `ComposedModel`, the tensor sum of its concerns: the `Compartment`s are the
+  Cartesian product of the attributes' values (lexicographic order, concerns in composition order),
+  and `transitions()` replicates each local transition over every combination of the other concerns' states.
+- a `Scenario` denotes a `GroundModel`: `var:` binds index variables to attributes; each assignment
+  gives a parameter a `ParameterValue` (a `Constant`, a `Table` indexed by attributes or variables such
+  as `mu_species` / `beta_ki`, or a `Formula` such as `lambda_pk`) or a compartment its initial
+  cardinality (`S_species: #(...)`, `S_birds_1: 49990`; the amount is spread evenly over the compartments
+  designated, and the last assignment wins). Parameter formulas given in a concern (`lambda: #(beta*I/N)`)
+  are defaults that the scenario may override.
+- `Evaluator` fixes the meaning of names in an expression: a parameter is evaluated for the indices the
+  reference supplies or for the current compartment; `N` and attribute values (`S`, `I_ip_free`) are
+  cardinalities, localised to the current compartment when unindexed (all other attributes fixed, except
+  the owner concern's attribute for `N`) and summed over the attributes not mentioned when indexed;
+  `sum_ (i in a) e` sums over the values of `a`.
+- `GroundModel.derivatives(t, y)` is the right-hand side of the composed ODE system, produced
+  automatically: for each compartment, the localised equation of every ODE-defined concern, plus the
+  flows of every transition of the composed automaton.
+
+`GroundModelSimulationTest` integrates the four models of the paper with RK4 and checks the totals at
+550 days against the hand-written MATLAB versions (paper repository, `matlab models/M1..M4`, run with
+Octave): the 40- and 80-compartment systems that the tensor sum produces from independent concerns give
+the same dynamics as the MATLAB systems written by hand.
+
 ## Publications
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
 
