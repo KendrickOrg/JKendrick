@@ -23,7 +23,7 @@ Scenario Scr1
     gamma_species: #(0.25 0.233);
     sigma_species: #(0.5 0.67);
     nu: 0.00274;
-    lambda_k: #(sum_ (i in species) beta_ki * I_i / N_i);
+    lambda_k: #(sum_ (i in species) beta_ki*I_i/N_i);
     S_species: #(5000 49990);
     I_species: #(0 10).
 

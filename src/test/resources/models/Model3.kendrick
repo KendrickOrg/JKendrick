@@ -37,7 +37,7 @@ Scenario Scr1
     sigma_species: #(0.5 0.67);
     nu: 0.00274;
     rho_species: #(0.03 0.1);
-    lambda_pk: #(sum_ (i in species) beta_ki * I_ip / N_ip);
+    lambda_pk: #(sum_ (i in species) beta_ki*I_ip/N_ip);
     S_species: #(25000 250000);
     S_birds_1: 49990;
     I_birds_1: 10.

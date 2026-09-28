@@ -45,7 +45,7 @@ Scenario Scr1
     sigma_species: #(0.5 0.67);
     nu_isolation: #(0.00274 0);
     rho_species_isolation: #(#(0.03 0) #(0.1 0));
-    lambda_pk: #(sum_ (i in species) beta_ki * I_ip_free / (N_ip - I_ip_isolated));
+    lambda_pk: #(sum_ (i in species) beta_ki*I_ip_free/(N_ip - I_ip_isolated));
     delta_status: #(0 0 0.2 0);
     epsilon_status: #(0 0 0 1);
     S_species_free: #(25000 250000);
