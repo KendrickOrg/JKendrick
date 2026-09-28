@@ -113,8 +113,14 @@ The solvers of package `jKendrick.simulation` work on a `GroundModel` and return
 - `RungeKuttaSolver`: fixed-step RK4 on `GroundModel.derivatives`, i.e. the composed ODE system;
 - `GillespieSolver` and `TauLeapSolver`: stochastic simulation of the composed CTMC, whose events are the
   transitions of the composed automaton (`GroundModel.transitions()`) with propensity rate x source cardinality.
-  They need every concern to be given by transitions: a concern given by ODEs (the SEIRS of the paper's
-  models) has no transitions to draw from, and the solvers say so.
+  They need every concern's dynamics as transitions. A concern given by ODEs provides them under the
+  hypotheses that let a deterministic model be read as a CTMC (Section 3 of the paper): when every term of
+  its equations is a flow proportional to its source compartment, `FlowExtractor` turns the equations into
+  transitions (`-lambda*S` in S matched by `+lambda*S` in E is `S -- lambda --> E`; an unmatched `-mu*S` is a
+  death, an unmatched `+mu*N` a birth from the outside), and the derivatives computed from these transitions
+  are those of the equations. Equations that are not in flow form keep their ODE reading only, and the
+  stochastic solvers say so. In the transition syntax, `Empty` names the outside (`status -- mu --> Empty`,
+  `Empty -- mu*N --> S`).
 
 `SimulationRunner` reads the `Simulation` entity: `solver:` ('rungeKutta', 'gillespie', 'tauLeap'), `from:`,
 `to:`, `step:`, and for stochastic runs `runs:` and `seed:`; `substeps:` refines the integration or leap step.

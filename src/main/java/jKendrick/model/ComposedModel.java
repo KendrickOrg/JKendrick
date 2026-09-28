@@ -116,15 +116,25 @@ public final class ComposedModel {
         List<Transition> result = new ArrayList<>();
         for (Concern k : concerns) {
             if (k.attribute == null) continue;
-            for (Concern.LocalTransition t : k.transitions)
-                for (Compartment c : compartments)
-                    if (t.from.equals(c.get(k.attribute.name)))
-                        result.add(new Transition(k, t, c, c.with(k.attribute.name, t.to)));
+            for (Concern.LocalTransition t : k.transitions) {
+                String a = k.attribute.name;
+                for (Compartment c : compartments) {
+                    if (t.isBirth()) {
+                        if (t.to.equals(c.get(a))) result.add(new Transition(k, t, null, c));
+                    } else if (t.from.equals(c.get(a))) {
+                        result.add(new Transition(k, t, c, t.isDeath() ? null : c.with(a, t.to)));
+                    }
+                }
+            }
         }
         return result;
     }
 
-    /** A transition of the composed model, between two compartments differing on one attribute. */
+    /**
+     * A transition of the composed model, between two compartments differing on one attribute,
+     * or between a compartment and the outside (birth: {@code from} null, absolute rate; death:
+     * {@code to} null).
+     */
     public static final class Transition {
         public final Concern concern;
         public final Concern.LocalTransition local;
@@ -138,9 +148,15 @@ public final class ComposedModel {
             this.to = to;
         }
 
+        public boolean isBirth() { return from == null; }
+        public boolean isDeath() { return to == null; }
+
+        /** The compartment the rate is evaluated at: the source, or the target for a birth. */
+        public Compartment site() { return from != null ? from : to; }
+
         @Override
         public String toString() {
-            return from + " --> " + to + " (" + concern.name + ")";
+            return (from == null ? "outside" : from.toString()) + " --> " + (to == null ? "outside" : to.toString()) + " (" + concern.name + ")";
         }
     }
 }

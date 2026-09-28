@@ -41,10 +41,9 @@ public final class TauLeapSolver extends StochasticSolver {
                 for (int k = 0; k < a.length; k++) {
                     if (a[k] <= 0) continue;
                     ComposedModel.Transition tr = transitions.get(k);
-                    int fromIdx = g.model.indexOf(tr.from), toIdx = g.model.indexOf(tr.to);
                     int n = poisson(a[k] * tau, random);
-                    delta[fromIdx] -= n;
-                    delta[toIdx] += n;
+                    if (tr.from != null) delta[g.model.indexOf(tr.from)] -= n;
+                    if (tr.to != null) delta[g.model.indexOf(tr.to)] += n;
                 }
                 for (int j = 0; j < y.length; j++) y[j] = Math.max(0, y[j] + delta[j]);
                 t += tau;

@@ -37,9 +37,7 @@ public final class GillespieSolver extends StochasticSolver {
                 acc += a[i];
                 if (u < acc) { chosen = i; break; }
             }
-            ComposedModel.Transition tr = transitions.get(chosen);
-            y[g.model.indexOf(tr.from)] -= 1;
-            y[g.model.indexOf(tr.to)] += 1;
+            fire(g, transitions.get(chosen), y, 1);
         }
         while (next < times.length) states[next++] = y.clone();
         return new Trajectory(g, times, states);

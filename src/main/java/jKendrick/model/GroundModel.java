@@ -14,8 +14,9 @@ import java.util.Map;
  *
  * {@link #derivatives(double, double[])} computes the right-hand side of the ODEs of the
  * composed model, which is what the tensor sum produces automatically from the concerns:
- * for each compartment, the localised equation of every concern defined by ODEs, plus the
- * inflows and outflows of every transition of the composed automaton.
+ * the inflows and outflows of every transition of the composed automaton (including births
+ * and deaths), plus, for a concern whose equations could not be read as flows, its localised
+ * equation at each compartment.
  */
 public final class GroundModel {
     public final String name;
@@ -72,16 +73,27 @@ public final class GroundModel {
         return v.at(Collections.emptyList(), context(t, state, c, model.concernOfParameter(name)));
     }
 
-    /** Rate of a transition of the composed automaton in the given state. */
+    /**
+     * Rate of a transition of the composed automaton in the given state: per capita of the
+     * source compartment, or absolute for a birth.
+     */
     public double rate(ComposedModel.Transition tr, double t, double[] state) {
-        return Evaluator.eval(tr.local.rate, context(t, state, tr.from, tr.concern));
+        return Evaluator.eval(tr.local.rate, context(t, state, tr.site(), tr.concern));
+    }
+
+    /** Propensity of a transition: rate times the source cardinality, or the rate itself for a birth. */
+    public double propensity(ComposedModel.Transition tr, double t, double[] state) {
+        double rate = rate(tr, t, state);
+        if (tr.isBirth()) return Math.max(0, rate);
+        double from = state[model.indexOf(tr.from)];
+        return from > 0 ? rate * from : 0;
     }
 
     /** dy/dt for the composed model. */
     public double[] derivatives(double t, double[] y) {
         double[] dy = new double[y.length];
         for (Concern k : model.concerns) {
-            if (!k.hasEquations()) continue;
+            if (!k.definedByOdesOnly()) continue;
             for (Compartment c : model.compartments) {
                 Ast.Expr rhs = k.equations.get(c.get(k.attribute.name));
                 if (rhs == null) continue; // no equation for this value: the concern leaves it unchanged
@@ -89,10 +101,9 @@ public final class GroundModel {
             }
         }
         for (ComposedModel.Transition tr : transitions) {
-            int from = model.indexOf(tr.from), to = model.indexOf(tr.to);
-            double flow = rate(tr, t, y) * y[from];
-            dy[from] -= flow;
-            dy[to] += flow;
+            double flow = propensity(tr, t, y);
+            if (tr.from != null) dy[model.indexOf(tr.from)] -= flow;
+            if (tr.to != null) dy[model.indexOf(tr.to)] += flow;
         }
         return dy;
     }

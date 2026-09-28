@@ -45,6 +45,9 @@ import java.util.Set;
  */
 public final class ModelBuilder {
 
+    /** The name of the outside in the transition syntax: {@code Empty -- mu --> S}, {@code status -- mu --> Empty}. */
+    public static final String OUTSIDE = "Empty";
+
     private ModelBuilder() {}
 
     public static GroundModel build(Ast.Script script) {
@@ -105,9 +108,19 @@ public final class ModelBuilder {
 
         List<Concern.LocalTransition> transitions = new ArrayList<>();
         for (Ast.Transition t : k.transitions) {
-            if (!values.contains(t.from) || !values.contains(t.to))
-                throw new SemanticException(where + ": transition " + t.from + " --> " + t.to + " between non-values of its attribute");
-            transitions.add(new Concern.LocalTransition(t.from, t.rate, t.to));
+            // 'Empty' is the outside (births and deaths); the attribute's name as a source means every value
+            String to = t.to.equals(OUTSIDE) ? null : t.to;
+            if (to != null && !values.contains(to))
+                throw new SemanticException(where + ": transition to " + to + ", which is not a value of its attribute");
+            List<String> froms = new ArrayList<>();
+            if (t.from.equals(OUTSIDE)) froms.add(null);
+            else if (attribute != null && t.from.equals(attribute.name)) froms.addAll(attribute.values);
+            else if (values.contains(t.from)) froms.add(t.from);
+            else throw new SemanticException(where + ": transition from " + t.from + ", which is not a value of its attribute");
+            for (String from : froms) {
+                if (from == null && to == null) throw new SemanticException(where + ": transition from Empty to Empty");
+                transitions.add(new Concern.LocalTransition(from, t.rate, to));
+            }
         }
         if (k.connectionMatrix != null) {
             if (attribute == null) throw new SemanticException(where + ": connectionMatrix without attribute");
@@ -128,6 +141,11 @@ public final class ModelBuilder {
         }
         if (!equations.isEmpty() && !transitions.isEmpty())
             throw new SemanticException(where + ": a concern is defined either by equations or by transitions, not both");
+        if (!equations.isEmpty()) {
+            // Under the hypotheses of the meta-model, equations in flow form denote transitions.
+            List<Concern.LocalTransition> derived = FlowExtractor.extract(equations);
+            if (derived != null) transitions = derived;
+        }
 
         Concern c = new Concern(k.name, attribute, k.parameters, k.parameterFormulas, equations, transitions);
         checkIndependence(c, where);

@@ -38,6 +38,16 @@ public final class Concern {
         this.transitions = Collections.unmodifiableList(transitions);
     }
 
+    /**
+     * True when the dynamics is only known as ODEs: the equations were given and could not be
+     * read as flows (see {@code FlowExtractor}). Such a concern can be integrated but not
+     * simulated stochastically.
+     */
+    public boolean definedByOdesOnly() {
+        return !equations.isEmpty() && transitions.isEmpty();
+    }
+
+    /** True when the equations were given (whether or not transitions were derived from them). */
     public boolean hasEquations() {
         return !equations.isEmpty();
     }
@@ -47,9 +57,15 @@ public final class Concern {
         return "Concern " + name + (attribute == null ? "" : " (" + attribute + ")");
     }
 
-    /** A transition {@code from -- rate --> to} between two values of the concern's attribute. */
+    /**
+     * A transition {@code from -- rate --> to} between two values of the concern's attribute.
+     * A null {@code from} is a birth from the outside, whose rate is absolute; a null {@code to}
+     * is a death to the outside. Otherwise the rate is per capita of the source compartment.
+     */
     public static final class LocalTransition {
+        /** Null for a birth (from the outside). */
         public final String from;
+        /** Null for a death (to the outside). */
         public final String to;
         public final Ast.Expr rate;
 
@@ -59,9 +75,12 @@ public final class Concern {
             this.to = to;
         }
 
+        public boolean isBirth() { return from == null; }
+        public boolean isDeath() { return to == null; }
+
         @Override
         public String toString() {
-            return from + " --> " + to;
+            return (from == null ? "outside" : from) + " --> " + (to == null ? "outside" : to);
         }
     }
 }

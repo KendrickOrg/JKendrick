@@ -95,11 +95,25 @@ class SolversTest {
     }
 
     @Test
-    void stochasticSolversRefuseConcernsGivenByEquations() throws IOException {
-        GroundModel m = model(1); // SEIRS is given by ODEs
+    void concernsGivenByEquationsInFlowFormRunStochastically() throws IOException {
+        GroundModel m = model(1); // SEIRS is given by ODEs, read as flows (with births and deaths)
+        Trajectory t = new GillespieSolver(1, 0).solve(m, 0, 20, 1).get(0);
+        double total = 0;
+        for (double v : t.last()) total += v;
+        assertTrue(total > 49000 && total < 51000, "births and deaths keep the population around 50000: " + total);
+        for (double v : t.last()) assertTrue(v >= 0 && v == Math.rint(v));
+    }
+
+    @Test
+    void stochasticSolversRefuseEquationsThatAreNotFlows() {
+        String script = "KModel A attribute: #(status in (S I)); parameters: #(beta);\n"
+                + "    equations: #(S:t=0 - beta*I. I:t=beta*I).\n"
+                + "Composition C model: 'A'.\nScenario Sc on: 'C'; beta: 1; S: 10; I: 1.\n";
+        GroundModel m = Kendrick.load(script);
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> new GillespieSolver(1, 0).solve(m, 0, 10, 1));
-        assertTrue(ex.getMessage().contains("SEIRS"));
+        assertTrue(ex.getMessage().contains("A"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("flow"), ex.getMessage());
     }
 
     @Test

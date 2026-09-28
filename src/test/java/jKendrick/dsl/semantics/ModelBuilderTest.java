@@ -4,6 +4,8 @@ import jKendrick.dsl.ast.Ast;
 import jKendrick.dsl.parser.KendrickParserFacade;
 import jKendrick.model.Compartment;
 import jKendrick.model.ComposedModel;
+import jKendrick.model.Concern;
+import jKendrick.model.Evaluator;
 import jKendrick.model.GroundModel;
 import jKendrick.model.ParameterValue;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,17 +93,19 @@ class ModelBuilderTest {
     @Test
     void transitionsOfTheComposedAutomatonAreReplicatedOverTheOtherConcerns() throws IOException {
         GroundModel g3 = model(3);
-        // the ring: 5 local transitions x 2 species x 4 statuses
-        assertEquals(40, g3.transitions().size());
+        // the ring: 5 local transitions x 2 species x 4 statuses = 40;
+        // SEIRS read as flows: 9 local transitions (4 moves, 4 deaths, 1 birth) x 2 species x 5 zones = 90
+        assertEquals(130, g3.transitions().size());
         GroundModel g4 = model(4);
-        // ring: 5 x 2 x 4 x 2 isolation states = 80; isolation: 2 local transitions x 4 x 2 x 5 = 80
-        assertEquals(160, g4.transitions().size());
+        // ring: 5 x 2 x 4 x 2 isolation states = 80; isolation: 2 x 4 x 2 x 5 = 80; SEIRS: 9 x 2 x 5 x 2 = 180
+        assertEquals(340, g4.transitions().size());
 
         double[] y = g4.initialState();
         Compartment iFree = compartment("status", "I", "species", "birds", "zone", "1", "isolation", "free");
         Compartment rIsolated = compartment("status", "R", "species", "birds", "zone", "1", "isolation", "isolated");
         int seen = 0;
         for (ComposedModel.Transition tr : g4.transitions()) {
+            if (tr.from == null) continue; // births
             if (tr.from.equals(iFree) && tr.concern.name.equals("Isolation")) {
                 assertEquals("I_birds_1_isolated", tr.to.toString());
                 assertEquals(0.2, g4.rate(tr, 0, y), 1e-12);
@@ -148,6 +153,67 @@ class ModelBuilderTest {
         assertEquals(-gamma * 10 - mu * 10, dy[2], 1e-9);
         assertEquals(gamma * 10, dy[3], 1e-9);
         assertEquals(0.0, dy[0] + dy[1] + dy[2] + dy[3], 1e-9);
+    }
+
+    @Test
+    void equationsInFlowFormAreReadAsTransitions() throws IOException {
+        Concern seirs = model(1).model.concerns.get(0);
+        assertTrue(seirs.hasEquations());
+        assertTrue(!seirs.definedByOdesOnly());
+        List<String> got = new ArrayList<>();
+        for (Concern.LocalTransition t : seirs.transitions) got.add(t + " @ " + FlowExtractor.text(t.rate));
+        assertEquals(List.of(
+                "S --> E @ lambda", "S --> outside @ mu",
+                "E --> I @ sigma", "E --> outside @ mu",
+                "I --> R @ gamma", "I --> outside @ mu",
+                "R --> outside @ mu", "R --> S @ nu",
+                "outside --> S @ (mu*N)"), got);
+    }
+
+    @Test
+    void theDerivedTransitionsGiveTheSameDerivativesAsTheEquations() throws IOException {
+        GroundModel g = model(3);
+        double[] y = g.initialState();
+        for (int i = 0; i < y.length; i++) y[i] += 7 * (i % 3); // a generic state
+        double[] viaTransitions = g.derivatives(0, y);
+        // the same model with the SEIRS equations kept as ODEs (no transitions): evaluate them directly
+        Concern seirs = g.model.concerns.get(0);
+        Concern odeOnly = new Concern(seirs.name, seirs.attribute, seirs.parameters, seirs.parameterFormulas, seirs.equations, List.of());
+        double[] viaEquations = new double[y.length];
+        for (Compartment c : g.model.compartments)
+            viaEquations[g.model.indexOf(c)] += Evaluator.eval(odeOnly.equations.get(c.get("status")), g.context(0, y, c, odeOnly));
+        for (ComposedModel.Transition tr : g.transitions()) {
+            if (tr.concern == seirs) continue; // the ring's flows, added on both sides
+            double flow = g.propensity(tr, 0, y);
+            viaEquations[g.model.indexOf(tr.from)] -= flow;
+            viaEquations[g.model.indexOf(tr.to)] += flow;
+        }
+        for (int i = 0; i < y.length; i++) assertEquals(viaEquations[i], viaTransitions[i], 1e-9 * Math.max(1, Math.abs(viaEquations[i])));
+    }
+
+    @Test
+    void equationsNotInFlowFormKeepTheOdeReadingOnly() {
+        String script = "KModel A attribute: #(status in (S I)); parameters: #(beta);\n"
+                + "    equations: #(S:t=0 - beta*I. I:t=beta*I).\n" // the outflow of S is not proportional to S
+                + "Composition C model: 'A'.\nScenario Sc on: 'C'; beta: 1; S: 10; I: 1.\n";
+        GroundModel g = ModelBuilder.build(KendrickParserFacade.parse(script));
+        assertTrue(g.model.concerns.get(0).definedByOdesOnly());
+        assertEquals(0, g.transitions().size());
+        double[] dy = g.derivatives(0, g.initialState());
+        assertEquals(-1.0, dy[0], 1e-12);
+        assertEquals(1.0, dy[1], 1e-12);
+    }
+
+    @Test
+    void emptyDenotesTheOutsideInTheTransitionSyntax() {
+        String script = "KModel A attribute: #(status in (S I)); parameters: #(beta mu);\n"
+                + "    transitions: #(S -- beta --> I. status -- mu --> Empty. Empty -- mu*N --> S).\n"
+                + "Composition C model: 'A'.\nScenario Sc on: 'C'; beta: 0.5; mu: 0.1; S: 90; I: 10.\n";
+        GroundModel g = ModelBuilder.build(KendrickParserFacade.parse(script));
+        assertEquals(4, g.transitions().size()); // S->I, S->out, I->out, out->S
+        double[] dy = g.derivatives(0, g.initialState());
+        assertEquals(0.1 * 100 - 0.5 * 90 - 0.1 * 90, dy[0], 1e-9);
+        assertEquals(0.5 * 90 - 0.1 * 10, dy[1], 1e-9);
     }
 
     // ---- errors
