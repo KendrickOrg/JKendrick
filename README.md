@@ -151,9 +151,9 @@ nor a compartment of C (line 4, column 22)`); syntax errors are reported as `fil
 `jKendrick.ui.KendrickStudio [script.kendrick]` opens a script editor, runs it (Run button or
 Ctrl+Enter, in the background) and shows the chart of its `Visualization` entity next to the editor,
 with the totals per status and species in the log; errors are logged with their position and the
-caret is moved to the first one. The chart can be saved as PNG. This is the front end of the DSL;
-the older `jKendrick.IHM.ui` application, `jKendrick.solvers` and `jKendrick.scenarios` are the
-hand-written SIR/SEIR/SIS models of the first prototype and do not use the DSL.
+caret is moved to the first one. The chart can be saved as PNG. (The pre-DSL prototype, with
+hand-written SIR/SEIR/SIS models and its own Swing application, was removed in September 2026; it is
+in the history before that.)
 
 ## Publications
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
