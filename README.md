@@ -101,6 +101,27 @@ meta-model (package `jKendrick.model`), which is how the paper defines the seman
 Octave): the 40- and 80-compartment systems that the tensor sum produces from independent concerns give
 the same dynamics as the MATLAB systems written by hand.
 
+## Running a script: solvers over the ground model
+
+`jKendrick.Kendrick` is the entry point of the pipeline (`load` a script, `build` the ground model, `run` its
+`Simulation` entity); as a program, `java -cp ... jKendrick.Kendrick model.kendrick [out.csv]` prints the totals
+per status and species at the end of the run and writes the trajectory as CSV.
+
+The solvers of package `jKendrick.simulation` work on a `GroundModel` and return `Trajectory` objects
+(times x compartments, with `aggregate("status", "species")` to sum over the other attributes):
+
+- `RungeKuttaSolver`: fixed-step RK4 on `GroundModel.derivatives`, i.e. the composed ODE system;
+- `GillespieSolver` and `TauLeapSolver`: stochastic simulation of the composed CTMC, whose events are the
+  transitions of the composed automaton (`GroundModel.transitions()`) with propensity rate x source cardinality.
+  They need every concern to be given by transitions: a concern given by ODEs (the SEIRS of the paper's
+  models) has no transitions to draw from, and the solvers say so.
+
+`SimulationRunner` reads the `Simulation` entity: `solver:` ('rungeKutta', 'gillespie', 'tauLeap'), `from:`,
+`to:`, `step:`, and for stochastic runs `runs:` and `seed:`; `substeps:` refines the integration or leap step.
+
+The older solvers in `jKendrick.solvers` and the scenario classes in `jKendrick.scenarios` are the
+hand-written models used by the Swing UI; they do not use the DSL yet.
+
 ## Publications
 See [my web page] (https://perso.lip6.fr/Mikal.Ziane/)
 
