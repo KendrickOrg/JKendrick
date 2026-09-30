@@ -36,13 +36,13 @@ class SolversTest {
     @Test
     void theSimulationEntityDrivesTheRun() throws IOException {
         GroundModel m = model(3);
-        List<Trajectory> runs = Kendrick.run(m); // rungeKutta, 0..550, step 1
+        List<Trajectory> runs = Kendrick.run(m); // rungeKutta, 0..1500, step 1
         assertEquals(1, runs.size());
         Trajectory t = runs.get(0);
-        assertEquals(551, t.size());
-        assertEquals(550.0, t.times[550]);
+        assertEquals(1501, t.size());
+        assertEquals(1500.0, t.times[1500]);
         Map<String, double[]> byStatusSpecies = t.aggregate("status", "species");
-        assertEquals(5 * 9.321, byStatusSpecies.get("I_birds")[550], 5 * 9.321 * 5e-3); // Octave, M3
+        assertEquals(273.5, byStatusSpecies.get("I_birds")[1500], 273.5 * 5e-3); // Octave, M3
         assertEquals(8, byStatusSpecies.size());
         assertTrue(t.toCsv().startsWith("t,S_humans_1,S_humans_2"));
     }
@@ -50,9 +50,9 @@ class SolversTest {
     @Test
     void substepsRefineTheIntegration() throws IOException {
         GroundModel m = model(1);
-        double coarse = new RungeKuttaSolver(1).solve(m, 0, 550, 1).get(0).last()[2];
-        double fine = new RungeKuttaSolver(8).solve(m, 0, 550, 1).get(0).last()[2];
-        assertEquals(22.46, fine, 22.46 * 2e-3);
+        double coarse = new RungeKuttaSolver(1).solve(m, 0, 1500, 1).get(0).last()[2];
+        double fine = new RungeKuttaSolver(8).solve(m, 0, 1500, 1).get(0).last()[2];
+        assertEquals(18.54, fine, 18.54 * 2e-3);
         assertEquals(fine, coarse, fine * 2e-3);
     }
 

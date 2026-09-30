@@ -12,7 +12,7 @@ import java.util.Map;
  * Simulation InfluenzaSim
  *     solver: 'rungeKutta';      -- or 'gillespie', 'tauLeap'
  *     scenario: 'Scr1';
- *     from: 0; to: 550; step: 1;
+ *     from: 0; to: 1500; step: 1;
  *     runs: 10; seed: 42;        -- stochastic solvers only (defaults: 1 run, seed 0)
  *     substeps: 4.               -- integration or leap sub-steps per recording step (default 1)
  * </pre>

@@ -12,15 +12,9 @@ KModel MultiSpecies
     attribute: #(species in (humans birds)).
 
 KModel MetaPopulation
-    attribute: #(zone in (range 1 5));
+    attribute: #(zone in (range 1 15));
     parameters: #(rho);
-    connectionMatrix: #(
-      #(0 1 0 0 0)
-      #(0 0 1 0 0)
-      #(0 0 0 1 0)
-      #(0 0 0 0 1)
-      #(1 0 0 0 0)
-    );
+    topology: #(ring oneWay);
     transitionRate: #(rho).
 
 Composition Influenza
@@ -38,15 +32,15 @@ Scenario Scr1
     nu: 0.00274;
     rho_species: #(0.03 0.1);
     lambda_pk: #(sum_ (i in species) beta_ki*I_ip/N_ip);
-    S_species: #(25000 250000);
-    S_birds_1: 49990;
-    I_birds_1: 10.
+    S_species: #(75000 750000);
+    S_birds_1: 49900;
+    I_birds_1: 100.
 
 Simulation InfluenzaSim
     solver: 'rungeKutta';
     scenario: 'Scr1';
     from: 0;
-    to: 550;
+    to: 1500;
     step: 1.
 
 Visualization InfluenzaViz

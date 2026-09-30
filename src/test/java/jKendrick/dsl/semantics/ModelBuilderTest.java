@@ -42,28 +42,28 @@ class ModelBuilderTest {
     void stateSpacesAreTheProductsOfTheAttributes() throws IOException {
         assertEquals(4, model(1).model.compartments.size());
         assertEquals(8, model(2).model.compartments.size());
-        assertEquals(40, model(3).model.compartments.size());
-        assertEquals(80, model(4).model.compartments.size());
+        assertEquals(120, model(3).model.compartments.size());
+        assertEquals(240, model(4).model.compartments.size());
         // lexicographic order, concerns in composition order
         ComposedModel m3 = model(3).model;
         assertEquals("S_humans_1", m3.compartments.get(0).toString());
         assertEquals("S_humans_2", m3.compartments.get(1).toString());
-        assertEquals("S_birds_1", m3.compartments.get(5).toString());
-        assertEquals("E_humans_1", m3.compartments.get(10).toString());
+        assertEquals("S_birds_1", m3.compartments.get(15).toString());
+        assertEquals("E_humans_1", m3.compartments.get(30).toString());
     }
 
     @Test
     void initialCardinalitiesFollowTheSpreadingAndLastWinsRules() throws IOException {
         GroundModel g = model(3);
-        // S_species: #(25000 250000) spread over the 5 zones, then S_birds_1: 49990 and I_birds_1: 10
+        // S_species: #(75000 750000) spread over the 15 zones, then S_birds_1: 49900 and I_birds_1: 100
         assertEquals(5000.0, g.initialCardinality(compartment("status", "S", "species", "humans", "zone", "3")));
         assertEquals(50000.0, g.initialCardinality(compartment("status", "S", "species", "birds", "zone", "2")));
-        assertEquals(49990.0, g.initialCardinality(compartment("status", "S", "species", "birds", "zone", "1")));
-        assertEquals(10.0, g.initialCardinality(compartment("status", "I", "species", "birds", "zone", "1")));
+        assertEquals(49900.0, g.initialCardinality(compartment("status", "S", "species", "birds", "zone", "1")));
+        assertEquals(100.0, g.initialCardinality(compartment("status", "I", "species", "birds", "zone", "1")));
         assertEquals(0.0, g.initialCardinality(compartment("status", "E", "species", "birds", "zone", "1")));
         double total = 0;
         for (double v : g.initialState()) total += v;
-        assertEquals(275000.0, total, 1e-9);
+        assertEquals(825000.0, total, 1e-9);
     }
 
     @Test
@@ -75,9 +75,9 @@ class ModelBuilderTest {
         assertEquals(0.00137, g.parameter("mu", birds1, 0, y), 1e-12);
         assertEquals(0.0000365, g.parameter("mu", humans1, 0, y), 1e-12);
         assertEquals(0.1, g.parameter("rho", birds1, 0, y), 1e-12);
-        // lambda_pk = sum_i beta_ki * I_ip / N_ip, with only 10 infectious birds in zone 1
-        assertEquals(0.24 * 10 / 50000, g.parameter("lambda", birds1, 0, y), 1e-15);
-        assertEquals(0.012 * 10 / 50000, g.parameter("lambda", humans1, 0, y), 1e-15);
+        // lambda_pk = sum_i beta_ki * I_ip / N_ip, with only 100 infectious birds in zone 1
+        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", birds1, 0, y), 1e-15);
+        assertEquals(0.012 * 100 / 50000, g.parameter("lambda", humans1, 0, y), 1e-15);
         assertEquals(0.0, g.parameter("lambda", compartment("status", "S", "species", "birds", "zone", "2"), 0, y), 1e-15);
         assertTrue(g.parameters.get("beta") instanceof ParameterValue.Table);
         assertTrue(g.parameters.get("lambda") instanceof ParameterValue.Formula);
@@ -87,18 +87,18 @@ class ModelBuilderTest {
     void model1UsesTheConcernsDefaultFormulaForLambda() throws IOException {
         GroundModel g = model(1);
         double[] y = g.initialState();
-        assertEquals(0.24 * 10 / 50000, g.parameter("lambda", compartment("status", "S"), 0, y), 1e-15);
+        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", compartment("status", "S"), 0, y), 1e-15);
     }
 
     @Test
     void transitionsOfTheComposedAutomatonAreReplicatedOverTheOtherConcerns() throws IOException {
         GroundModel g3 = model(3);
-        // the ring: 5 local transitions x 2 species x 4 statuses = 40;
-        // SEIRS read as flows: 9 local transitions (4 moves, 4 deaths, 1 birth) x 2 species x 5 zones = 90
-        assertEquals(130, g3.transitions().size());
+        // the ring: 15 local transitions x 2 species x 4 statuses = 120;
+        // SEIRS read as flows: 9 local transitions (4 moves, 4 deaths, 1 birth) x 2 species x 15 zones = 270
+        assertEquals(390, g3.transitions().size());
         GroundModel g4 = model(4);
-        // ring: 5 x 2 x 4 x 2 isolation states = 80; isolation: 2 x 4 x 2 x 5 = 80; SEIRS: 9 x 2 x 5 x 2 = 180
-        assertEquals(340, g4.transitions().size());
+        // ring: 15 x 2 x 4 x 2 isolation states = 240; isolation: 2 x 4 x 2 x 15 = 240; SEIRS: 9 x 2 x 15 x 2 = 540
+        assertEquals(1020, g4.transitions().size());
 
         double[] y = g4.initialState();
         Compartment iFree = compartment("status", "I", "species", "birds", "zone", "1", "isolation", "free");
@@ -133,25 +133,25 @@ class ModelBuilderTest {
         GroundModel g = model(4);
         double[] y = g.initialState();
         Compartment sBirds1 = compartment("status", "S", "species", "birds", "zone", "1", "isolation", "free");
-        assertEquals(0.24 * 10 / 50000, g.parameter("lambda", sBirds1, 0, y), 1e-15);
-        // move the 10 infectious birds into isolation: lambda drops to 0, N - I_isolated = 49990
+        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", sBirds1, 0, y), 1e-15);
+        // move the 100 infectious birds into isolation: lambda drops to 0, N - I_isolated = 49900
         int free = g.model.indexOf(compartment("status", "I", "species", "birds", "zone", "1", "isolation", "free"));
         int isolated = g.model.indexOf(compartment("status", "I", "species", "birds", "zone", "1", "isolation", "isolated"));
         y[free] = 0;
-        y[isolated] = 10;
+        y[isolated] = 100;
         assertEquals(0.0, g.parameter("lambda", sBirds1, 0, y), 1e-15);
     }
 
     @Test
     void derivativesConservePopulationAndMatchTheHandWrittenSEIRS() throws IOException {
         GroundModel g = model(1);
-        double[] y = g.initialState(); // S=49990 E=0 I=10 R=0
+        double[] y = g.initialState(); // S=49900 E=0 I=100 R=0
         double[] dy = g.derivatives(0, y);
-        double mu = 0.00137, beta = 0.24, gamma = 0.233, N = 50000, lambda = beta * 10 / N;
-        assertEquals(mu * N - lambda * 49990 - mu * 49990, dy[0], 1e-9);
-        assertEquals(lambda * 49990, dy[1], 1e-9);
-        assertEquals(-gamma * 10 - mu * 10, dy[2], 1e-9);
-        assertEquals(gamma * 10, dy[3], 1e-9);
+        double mu = 0.00137, beta = 0.24, gamma = 0.233, N = 50000, lambda = beta * 100 / N;
+        assertEquals(mu * N - lambda * 49900 - mu * 49900, dy[0], 1e-9);
+        assertEquals(lambda * 49900, dy[1], 1e-9);
+        assertEquals(-gamma * 100 - mu * 100, dy[2], 1e-9);
+        assertEquals(gamma * 100, dy[3], 1e-9);
         assertEquals(0.0, dy[0] + dy[1] + dy[2] + dy[3], 1e-9);
     }
 
@@ -214,6 +214,35 @@ class ModelBuilderTest {
         double[] dy = g.derivatives(0, g.initialState());
         assertEquals(0.1 * 100 - 0.5 * 90 - 0.1 * 90, dy[0], 1e-9);
         assertEquals(0.5 * 90 - 0.1 * 10, dy[1], 1e-9);
+    }
+
+    @Test
+    void topologiesDenoteTheirAdjacencyMatrices() throws IOException {
+        String head = "KModel Z attribute: #(zone in (range 1 4)); parameters: #(rho); transitionRate: #(rho); topology: #(%s).\n"
+                + "Composition C model: 'Z'.\nScenario Sc on: 'C'; rho: 1.\n";
+        assertEquals(List.of("1>2", "2>3", "3>4", "4>1"), arcs(String.format(head, "ring oneWay")));
+        assertEquals(List.of("1>2", "1>4", "2>1", "2>3", "3>2", "3>4", "4>1", "4>3"), arcs(String.format(head, "ring")));
+        assertEquals(arcs(String.format(head, "ring")), arcs(String.format(head, "ring twoWay")));
+        assertEquals(List.of("1>2", "2>3", "3>4"), arcs(String.format(head, "line oneWay")));
+        assertEquals(List.of("1>2", "2>1", "2>3", "3>2", "3>4", "4>3"), arcs(String.format(head, "line")));
+        assertEquals(12, arcs(String.format(head, "complete")).size());
+        // the ring of Model 3 is the one the explicit matrix used to give
+        assertEquals(15 * 8, model(3).transitions().stream().filter(t -> t.concern.name.equals("MetaPopulation")).count());
+        SemanticException ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(String.format(head, "torus"))));
+        assertTrue(ex.getMessage().contains("unknown topology 'torus'"), ex.getMessage());
+        ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(String.format(head, "ring backwards"))));
+        assertTrue(ex.getMessage().contains("oneWay or twoWay"), ex.getMessage());
+        String both = head.replace("topology: #(%s)", "topology: #(ring); connectionMatrix: #(#(0 1 0 0) #(0 0 1 0) #(0 0 0 1) #(1 0 0 0))");
+        ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(both)));
+        assertTrue(ex.getMessage().contains("exclusive"), ex.getMessage());
+    }
+
+    private static List<String> arcs(String script) throws SemanticException {
+        GroundModel g = ModelBuilder.build(KendrickParserFacade.parse(script));
+        List<String> arcs = new java.util.ArrayList<>();
+        for (Concern.LocalTransition t : g.model.concerns.get(0).transitions) arcs.add(t.from + ">" + t.to);
+        java.util.Collections.sort(arcs);
+        return arcs;
     }
 
     // ---- errors

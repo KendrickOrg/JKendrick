@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Integrates the composed models with a fixed-step RK4 and compares the totals at t = 550 days
+ * Integrates the composed models with a fixed-step RK4 and compares the totals at t = 1500 days
  * with the results of the hand-written MATLAB versions of the same models (paper repository,
  * {@code matlab models/M1..M4}, run with Octave 8.4 and ode45). The MATLAB models write the
  * combined ODE system by hand; here it is produced by the tensor sum of the concerns.
@@ -65,61 +65,62 @@ class GroundModelSimulationTest {
     @Test
     void model1_matchesMatlabSEIRS() throws IOException {
         GroundModel g = model(1);
-        Map<String, Double> t = totals(g, rk4(g, 0, 550, 1));
-        // Octave, M1: final state [4.902e+04 7.858 22.46 946.7]
-        assertClose(49020, t.get("S"), "S");
-        assertClose(7.858, t.get("E"), "E");
-        assertClose(22.46, t.get("I"), "I");
-        assertClose(946.7, t.get("R"), "R");
+        Map<String, Double> t = totals(g, rk4(g, 0, 1500, 1));
+        // Octave, M1: final state [49027.1 6.492 18.54 947.8]
+        assertClose(49027.1, t.get("S"), "S");
+        assertClose(6.492, t.get("E"), "E");
+        assertClose(18.54, t.get("I"), "I");
+        assertClose(947.8, t.get("R"), "R");
     }
 
     @Test
     void model2_birdsBehaveAsInModel1AndHumansAreInfectedByBirds() throws IOException {
         GroundModel g = model(2);
-        Map<String, Double> t = totals(g, rk4(g, 0, 550, 1));
-        // Octave, M2: [S_h S_b E_h E_b I_h I_b R_h R_b] = [4994 4.902e+04 0.05377 7.864 0.1074 22.45 5.973 946.7]
-        assertClose(4994, t.get("S_humans"), "S_humans");
-        assertClose(49020, t.get("S_birds"), "S_birds");
-        assertClose(0.05377, t.get("E_humans"), "E_humans");
-        assertClose(7.864, t.get("E_birds"), "E_birds");
-        assertClose(0.1074, t.get("I_humans"), "I_humans");
-        assertClose(22.45, t.get("I_birds"), "I_birds");
-        assertClose(5.973, t.get("R_humans"), "R_humans");
-        assertClose(946.7, t.get("R_birds"), "R_birds");
+        Map<String, Double> t = totals(g, rk4(g, 0, 1500, 1));
+        // Octave, M2: [S_h S_b E_h E_b I_h I_b R_h R_b] = [4992.65 49027.1 0.04438 6.493 0.08863 18.54 7.218 947.8]
+        assertClose(4992.65, t.get("S_humans"), "S_humans");
+        assertClose(49027.1, t.get("S_birds"), "S_birds");
+        assertClose(0.04438, t.get("E_humans"), "E_humans");
+        assertClose(6.493, t.get("E_birds"), "E_birds");
+        assertClose(0.08863, t.get("I_humans"), "I_humans");
+        assertClose(18.54, t.get("I_birds"), "I_birds");
+        assertClose(7.218, t.get("R_humans"), "R_humans");
+        assertClose(947.8, t.get("R_birds"), "R_birds");
     }
 
     @Test
     void model3_matchesTheHandWrittenMetapopulationSystem() throws IOException {
         GroundModel g = model(3);
-        double[] y = rk4(g, 0, 550, 1);
+        double[] y = rk4(g, 0, 1500, 1);
         Map<String, Double> t = totals(g, y);
-        // Octave, M3, per patch at t=550 (all five patches equal): S 4998 / 4.969e4, E 0.02224 / 3.298,
-        // I 0.04399 / 9.321, R 1.805 / 298.5 (humans / birds)
-        assertClose(5 * 4998, t.get("S_humans"), "S_humans");
-        assertClose(5 * 49690, t.get("S_birds"), "S_birds");
-        assertClose(5 * 0.02224, t.get("E_humans"), "E_humans");
-        assertClose(5 * 3.298, t.get("E_birds"), "E_birds");
-        assertClose(5 * 0.04399, t.get("I_humans"), "I_humans");
-        assertClose(5 * 9.321, t.get("I_birds"), "I_birds");
-        assertClose(5 * 1.805, t.get("R_humans"), "R_humans");
-        assertClose(5 * 298.5, t.get("R_birds"), "R_birds");
+        // Octave, M3, totals over the 15 patches at t=1500 (humans / birds): S 74875.5 / 733374,
+        // E 0.6553 / 95.61, I 1.311 / 273.5, R 122.5 / 16257
+        assertClose(74875.5, t.get("S_humans"), "S_humans");
+        assertClose(733374, t.get("S_birds"), "S_birds");
+        assertClose(0.6553, t.get("E_humans"), "E_humans");
+        assertClose(95.61, t.get("E_birds"), "E_birds");
+        assertClose(1.311, t.get("I_humans"), "I_humans");
+        assertClose(273.5, t.get("I_birds"), "I_birds");
+        assertClose(122.5, t.get("R_humans"), "R_humans");
+        assertClose(16257, t.get("R_birds"), "R_birds");
         double total = 0;
         for (double v : y) total += v;
-        assertEquals(275000, total, 1e-6);
+        assertEquals(825000, total, 1e-6);
     }
 
     @Test
     void model4_isolationExtinguishesTheEpidemicAsInMatlab() throws IOException {
         GroundModel g = model(4);
-        double[] y = rk4(g, 0, 550, 1);
+        double[] y = rk4(g, 0, 1500, 1);
         Map<String, Double> t = totals(g, y);
-        // Octave, M4: infectious ~1e-7 or less; R per patch 0.002776 (humans), 0.4804 (birds)
+        // Octave, M4: with delta = 0.2 the controlled reproduction number of birds is 0.55 and the
+        // epidemic dies out: infectious ~1e-17; R totals 0.009915 (humans), 0.4833 (birds)
         assertEquals(0.0, t.get("I_birds"), 1e-6);
         assertEquals(0.0, t.get("I_humans"), 1e-6);
-        assertClose(5 * 0.4804, t.get("R_birds"), "R_birds");
-        assertClose(5 * 0.002776, t.get("R_humans"), "R_humans");
+        assertClose(0.4833, t.get("R_birds"), "R_birds");
+        assertClose(0.009915, t.get("R_humans"), "R_humans");
         double total = 0;
         for (double v : y) total += v;
-        assertEquals(275000, total, 1e-6);
+        assertEquals(825000, total, 1e-6);
     }
 }

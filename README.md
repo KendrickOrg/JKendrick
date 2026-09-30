@@ -78,14 +78,14 @@ following script is `src/test/resources/models/Model1.kendrick`, an SEIRS model 
         gamma: 0.233;
         sigma: 0.67;
         nu: 0.00274;
-        S: 49990;
-        I: 10.
+        S: 49900;
+        I: 100.
 
     Simulation InfluenzaSim
         solver: 'rungeKutta';
         scenario: 'Scr1';
         from: 0;
-        to: 550;
+        to: 1500;
         step: 1.
 
     Visualization InfluenzaViz
@@ -109,7 +109,7 @@ and the composition `model: 'SEIRS'; model: 'MultiSpecies'` yields the 8-compart
 indexed names: `mu_species: #(0.0000365 0.00137)`, a transmission matrix `beta_ki: #(#(0 0.012) #(0 0.24))`
 over variables bound by `var: #((k in species) (i in species))`, and the force of infection
 `lambda_k: #(sum_ (i in species) beta_ki*I_i/N_i)`. `Model3.kendrick` adds a `MetaPopulation` concern
-(5 zones, a `connectionMatrix:` and a `transitionRate:`) and `Model4.kendrick` an `Isolation` concern
+(15 zones on a one-way ring, `topology: #(ring oneWay)`, and a `transitionRate:`) and `Model4.kendrick` an `Isolation` concern
 given by transitions; none of the earlier concerns is modified. The four scripts are the models of the
 paper; `kendrick models/SYNTAX.md` in the paper repository is the language reference.
 
@@ -121,11 +121,11 @@ runs the script's `Simulation` entity and prints the model's size and the totals
 species) at the end of the run:
 
     Influenza: 1 concerns, 4 compartments, 9 transitions
-    1 run(s), t = 0.0 .. 550.0
-      S                          49022.9464
-      E                              7.8645
-      I                             22.4493
-      R                            946.7398
+    1 run(s), t = 0.0 .. 1500.0
+      S                          49027.1486
+      E                              6.4936
+      I                             18.5352
+      R                            947.8226
 
 `--csv` writes the full trajectory of the first run (one column per compartment), `--png` draws the
 script's `Visualization` entities (one PNG per entity, suffixed with the entity's name when there are
@@ -154,8 +154,8 @@ moved to the first one. *Save* and *Save as...* write the script, *Save chart as
     double[] dy = model.derivatives(0, model.initialState());           // the composed ODE system, if needed
 
     // or choose the solver yourself
-    Trajectory ode = new RungeKuttaSolver(4).solve(model, 0, 550, 1).get(0);          // 4 substeps per step
-    List<Trajectory> ssa = new GillespieSolver(20, 7L).solve(model, 0, 550, 1);        // 20 runs, seed 7
+    Trajectory ode = new RungeKuttaSolver(4).solve(model, 0, 1500, 1).get(0);         // 4 substeps per step
+    List<Trajectory> ssa = new GillespieSolver(20, 7L).solve(model, 0, 1500, 1);       // 20 runs, seed 7
     XYChart chart = ChartRenderer.chart(Kendrick.visualizations(model).get(0), ssa);  // XChart
     ChartRenderer.savePng(chart, Paths.get("ssa.png"));
 
@@ -196,6 +196,7 @@ The grammar is `src/main/antlr4/jKendrick/dsl/grammar/Kendrick.g4` (ANTLR 4). In
                   | 'equations:' '#(' equation ('.' equation)* '.'? ')'
                   | 'transitions:' '#(' transition ('.' transition)* '.'? ')'
                   | 'connectionMatrix:' '#(' ('#(' NUMBER+ ')')+ ')'
+                  | 'topology:' '#(' ID ID? ')'                 -- ring | line | complete, oneWay | twoWay
                   | 'transitionRate:' '#(' expr ')'
                   | KEYWORD '#(' expr ')'                       -- default formula of a parameter
     domain        : '(' (ID | NUMBER)+ ')' | '(' 'range' NUMBER NUMBER ')'
@@ -214,6 +215,14 @@ The functions are `sin`, `cos`, `exp`, `log`, `sqrt`, `abs`, `min`, `max`, `pow`
 outside of the population in transitions: `status -- mu --> Empty` (deaths from every status),
 `Empty -- mu*N --> S` (births). A concern may only name its own parameters and attribute values (plus
 `N` and `t`): dependencies between concerns belong to the scenario.
+
+A spatial concern gives the graph of its zones either explicitly, as an adjacency matrix
+(`connectionMatrix: #(#(0 1 0) #(0 0 1) #(1 0 0))`, row = origin, column = destination), or as a named
+`topology:` over the values of its attribute, in their order: `ring` (each zone is linked to the next
+one, the last to the first), `line` (each zone to the next one) or `complete` (every pair of zones).
+A topology is two-way unless `oneWay` is given (`topology: #(ring oneWay)`; `twoWay` is accepted
+for emphasis). Both are exclusive and both need a `transitionRate:`, the rate at which an individual
+follows an arc: the concern's transitions are one per arc, replicated over the other concerns.
 
 ### Meaning of names
 
@@ -249,10 +258,7 @@ reading and the stochastic solvers say so.
 Simulation), `data:` (`#(I_species)`: one series per species, the infectious summed over the other
 attributes; `#(I)`: the total; `#(I_species_zone)`: one per species and zone; absent: one series per
 status), `legendTitle:`, `legends:` (renames the series, in order), `xLabel:`, and optionally `yLabel:`
-and `title:`. Charts are drawn in the style of the Pharo implementation's `KEChart`: white background, no grid,
-thin lines, legend under the plot, "Time (days)" and "Number of individuals" as default axis titles, no
-chart title unless `title:` is given. With several stochastic runs every run is drawn as a thin curve of
-its series' colour.
+and `title:`. With several stochastic runs every run is drawn as a thin curve of its series' colour.
 
 ### Errors
 
@@ -289,15 +295,15 @@ The pipeline is script -> AST -> meta-model objects -> trajectories, one package
 - `jKendrick.Kendrick` is the command-line entry point and the API (`load`, `build`, `run`,
   `visualizations`); `jKendrick.ui.KendrickStudio` the Swing front end.
 
-Model 3 of the paper (3 concerns, 40 compartments, 130 transitions, 275 000 individuals) runs 550
-days of Gillespie in about 5 s and of RK4 in a few hundredths of a second.
+Model 3 of the paper (3 concerns, 120 compartments, 390 transitions, 825 000 individuals) runs 1500
+days of Gillespie in about a minute and a half and of RK4 in a few tenths of a second.
 
 ## Tests
 
 `mvn test` runs the JUnit 5 tests: the parser on the four models (`KendrickParserFacadeTest`), the
 semantic rules and their error messages (`ModelBuilderTest`), the agreement of the compiled rates
 with the interpreter and the completeness of the dependency lists (`RateCompilerTest`), the composed
-ODE systems against the hand-written MATLAB versions of the paper at 550 days
+ODE systems against the hand-written MATLAB versions of the paper at 1500 days
 (`GroundModelSimulationTest`; the MATLAB scripts are in the paper repository, `matlab models/M1..M4`,
 and were run with Octave), the solvers (`SolversTest`: Gillespie runs are integer, conservative and
 close to the ODE on average, tau-leap close to Gillespie, flow-form equations run stochastically) and

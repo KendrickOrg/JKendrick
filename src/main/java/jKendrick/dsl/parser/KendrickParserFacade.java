@@ -112,6 +112,7 @@ public final class KendrickParserFacade {
             List<Ast.Equation> equations = new ArrayList<>();
             List<Ast.Transition> transitions = new ArrayList<>();
             double[][] matrix = null;
+            Ast.Topology topology = null;
             Ast.Expr transitionRate = null;
 
             for (KendrickParser.ModelClauseContext c : ctx.modelClause()) {
@@ -134,6 +135,9 @@ public final class KendrickParserFacade {
                         matrix[i] = new double[nums.size()];
                         for (int j = 0; j < nums.size(); j++) matrix[i][j] = Double.parseDouble(nums.get(j).getText());
                     }
+                } else if (c instanceof KendrickParser.TopologyClauseContext) {
+                    KendrickParser.TopologyClauseContext t = (KendrickParser.TopologyClauseContext) c;
+                    topology = at(new Ast.Topology(t.kind.getText(), t.direction == null ? null : t.direction.getText()), t);
                 } else if (c instanceof KendrickParser.TransitionRateClauseContext) {
                     transitionRate = expr(((KendrickParser.TransitionRateClauseContext) c).expr());
                 } else if (c instanceof KendrickParser.ParameterFormulaClauseContext) {
@@ -141,7 +145,7 @@ public final class KendrickParserFacade {
                     formulas.put(keywordName(p.KEYWORD().getText()), expr(p.expr()));
                 }
             }
-            return at(new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, transitionRate), ctx);
+            return at(new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, topology, transitionRate), ctx);
         }
 
         private static List<String> domainValues(KendrickParser.DomainContext d) {

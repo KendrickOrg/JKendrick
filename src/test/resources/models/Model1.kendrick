@@ -18,14 +18,14 @@ Scenario Scr1
     gamma: 0.233;
     sigma: 0.67;
     nu: 0.00274;
-    S: 49990;
-    I: 10.
+    S: 49900;
+    I: 100.
 
 Simulation InfluenzaSim
     solver: 'rungeKutta';
     scenario: 'Scr1';
     from: 0;
-    to: 550;
+    to: 1500;
     step: 1.
 
 Visualization InfluenzaViz

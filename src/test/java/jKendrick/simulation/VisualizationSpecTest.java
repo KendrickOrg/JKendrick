@@ -36,7 +36,7 @@ class VisualizationSpecTest {
 
     @Test
     void dataNamesSumOverTheAttributesNotListed() throws IOException {
-        GroundModel m = SolversTest.model(3); // status x species x zone(5)
+        GroundModel m = SolversTest.model(3); // status x species x zone(15)
         Trajectory t = new RungeKuttaSolver(1).solve(m, 0, 10, 1).get(0);
         Map<String, double[]> series = Kendrick.visualizations(m).get(0).series(t);
         // legends rename the series I_humans, I_birds in order
@@ -53,8 +53,8 @@ class VisualizationSpecTest {
             assertEquals(expected.get("I_humans")[i] + expected.get("I_birds")[i], all[i], 1e-9);
         VisualizationSpec fine = VisualizationSpec.of("V", args("data", array(id("I_species_zone"))));
         Map<String, double[]> byZone = fine.series(t);
-        assertEquals(10, byZone.size());
-        assertTrue(byZone.containsKey("I_humans_1") && byZone.containsKey("I_birds_5"));
+        assertEquals(30, byZone.size());
+        assertTrue(byZone.containsKey("I_humans_1") && byZone.containsKey("I_birds_15"));
         assertArrayEquals(t.aggregate("status", "species", "zone").get("I_birds_3"), byZone.get("I_birds_3"), 1e-12);
     }
 

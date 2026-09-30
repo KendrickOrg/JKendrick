@@ -52,7 +52,7 @@ class KendrickParserFacadeTest {
 
         Ast.Simulation sim = s.entitiesOf(Ast.Simulation.class).get(0);
         assertEquals("rungeKutta", sim.arguments.get("solver").string);
-        assertEquals(550.0, sim.arguments.get("to").number.doubleValue());
+        assertEquals(1500.0, sim.arguments.get("to").number.doubleValue());
     }
 
     @Test
@@ -63,11 +63,14 @@ class KendrickParserFacadeTest {
                 List.of(concerns.get(0).name, concerns.get(1).name, concerns.get(2).name));
 
         Ast.KModel meta = concerns.get(2);
-        assertEquals(List.of("1", "2", "3", "4", "5"), meta.attribute.values);
-        assertEquals(5, meta.connectionMatrix.length);
-        assertEquals(1.0, meta.connectionMatrix[4][0]);
+        assertEquals(15, meta.attribute.values.size());
+        assertEquals(List.of("1", "2", "3"), meta.attribute.values.subList(0, 3));
+        assertNull(meta.connectionMatrix);
+        assertEquals("ring", meta.topology.kind);
+        assertEquals("oneWay", meta.topology.direction);
+        assertTrue(meta.topology.oneWay());
         assertNotNull(meta.transitionRate);
-        assertNull(concerns.get(1).connectionMatrix);
+        assertNull(concerns.get(1).topology);
 
         assertEquals(List.of("SEIRS", "MultiSpecies", "MetaPopulation"), s.entitiesOf(Ast.Composition.class).get(0).models);
 
@@ -127,7 +130,7 @@ class KendrickParserFacadeTest {
         assertEquals(List.of("ip", "free"), iFree.name.indices);
 
         Ast.ValueAssignment init = find(sc, "S_birds_1_free");
-        assertEquals(49990.0, init.value.scalar.doubleValue());
+        assertEquals(49900.0, init.value.scalar.doubleValue());
     }
 
     @Test

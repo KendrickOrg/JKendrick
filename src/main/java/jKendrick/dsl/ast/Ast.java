@@ -71,12 +71,14 @@ public final class Ast {
         public final List<Transition> transitions;
         /** Adjacency matrix of {@code connectionMatrix:}, or null. */
         public final double[][] connectionMatrix;
+        /** Named graph of {@code topology:} ({@code ring}, {@code line}, {@code complete}), or null. */
+        public final Topology topology;
         /** Rate of {@code transitionRate:}, or null. */
         public final Expr transitionRate;
 
         public KModel(String name, Attribute attribute, List<String> parameters,
                       Map<String, Expr> parameterFormulas, List<Equation> equations,
-                      List<Transition> transitions, double[][] connectionMatrix, Expr transitionRate) {
+                      List<Transition> transitions, double[][] connectionMatrix, Topology topology, Expr transitionRate) {
             super(name);
             this.attribute = attribute;
             this.parameters = Collections.unmodifiableList(parameters);
@@ -84,8 +86,19 @@ public final class Ast {
             this.equations = Collections.unmodifiableList(equations);
             this.transitions = Collections.unmodifiableList(transitions);
             this.connectionMatrix = connectionMatrix;
+            this.topology = topology;
             this.transitionRate = transitionRate;
         }
+    }
+
+    /** {@code topology: #(ring oneWay)}: a named graph over the attribute's values ({@code ring}, {@code line},
+     *  {@code complete}), with an optional direction ({@code oneWay} or {@code twoWay}, the default). */
+    public static final class Topology extends Node {
+        public final String kind;
+        /** {@code oneWay}, {@code twoWay} or null (two-way). */
+        public final String direction;
+        public Topology(String kind, String direction) { this.kind = kind; this.direction = direction; }
+        public boolean oneWay() { return "oneWay".equals(direction); }
     }
 
     /** {@code attribute: #(status in (S E I R))} or {@code #(zone in (range 1 5))}. */

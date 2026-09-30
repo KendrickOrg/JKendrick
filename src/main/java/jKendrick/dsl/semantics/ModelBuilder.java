@@ -112,6 +112,33 @@ public final class ModelBuilder {
 
     // ------------------------------------------------------------------ concerns
 
+    /**
+     * The adjacency matrix denoted by {@code topology: #(kind [direction])} over n values in declaration order:
+     * {@code ring} (1 -> 2 -> ... -> n -> 1), {@code line} (1 -> 2 -> ... -> n) and {@code complete} (every
+     * pair); two-way unless the direction is {@code oneWay}.
+     */
+    static double[][] topologyMatrix(Ast.Topology t, int n, String where) {
+        if (t.direction != null && !t.direction.equals("oneWay") && !t.direction.equals("twoWay"))
+            throw new SemanticException(where + ": topology direction must be oneWay or twoWay, not " + t.direction).at(t);
+        double[][] m = new double[n][n];
+        switch (t.kind) {
+            case "ring":
+                if (n < 2) throw new SemanticException(where + ": a ring needs at least two values").at(t);
+                for (int i = 0; i < n; i++) m[i][(i + 1) % n] = 1;
+                break;
+            case "line":
+                for (int i = 0; i + 1 < n; i++) m[i][i + 1] = 1;
+                break;
+            case "complete":
+                for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (i != j) m[i][j] = 1;
+                break;
+            default:
+                throw new SemanticException(where + ": unknown topology '" + t.kind + "' (ring, line, complete)").at(t);
+        }
+        if (!t.oneWay()) for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) if (m[i][j] == 1) m[j][i] = 1;
+        return m;
+    }
+
     private static Concern concern(Ast.KModel k) {
         Attribute attribute = k.attribute == null ? null : new Attribute(k.attribute.name, k.attribute.values);
         Set<String> values = attribute == null ? Collections.emptySet() : new HashSet<>(attribute.values);
@@ -141,17 +168,24 @@ public final class ModelBuilder {
                 transitions.add(new Concern.LocalTransition(from, t.rate, to));
             }
         }
-        if (k.connectionMatrix != null) {
-            if (attribute == null) throw new SemanticException(where + ": connectionMatrix without attribute");
-            if (k.transitionRate == null) throw new SemanticException(where + ": connectionMatrix needs a transitionRate");
+        double[][] matrix = k.connectionMatrix;
+        if (k.topology != null) {
+            if (matrix != null) throw new SemanticException(where + ": connectionMatrix and topology are exclusive").at(k.topology);
+            if (attribute == null) throw new SemanticException(where + ": topology without attribute").at(k.topology);
+            matrix = topologyMatrix(k.topology, attribute.values.size(), where);
+        }
+        if (matrix != null) {
+            String clause = k.topology != null ? "topology" : "connectionMatrix";
+            if (attribute == null) throw new SemanticException(where + ": " + clause + " without attribute");
+            if (k.transitionRate == null) throw new SemanticException(where + ": " + clause + " needs a transitionRate");
             int n = attribute.values.size();
-            if (k.connectionMatrix.length != n)
-                throw new SemanticException(where + ": connectionMatrix has " + k.connectionMatrix.length + " rows for " + n + " values");
+            if (matrix.length != n)
+                throw new SemanticException(where + ": connectionMatrix has " + matrix.length + " rows for " + n + " values");
             for (int i = 0; i < n; i++) {
-                if (k.connectionMatrix[i].length != n)
-                    throw new SemanticException(where + ": connectionMatrix row " + (i + 1) + " has " + k.connectionMatrix[i].length + " entries for " + n + " values");
+                if (matrix[i].length != n)
+                    throw new SemanticException(where + ": connectionMatrix row " + (i + 1) + " has " + matrix[i].length + " entries for " + n + " values");
                 for (int j = 0; j < n; j++) {
-                    double a = k.connectionMatrix[i][j];
+                    double a = matrix[i][j];
                     if (a == 0) continue;
                     Ast.Expr rate = a == 1 ? k.transitionRate : new Ast.Binary('*', new Ast.Num(a), k.transitionRate);
                     transitions.add(new Concern.LocalTransition(attribute.values.get(i), rate, attribute.values.get(j)));
