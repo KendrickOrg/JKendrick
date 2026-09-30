@@ -31,5 +31,4 @@ Simulation InfluenzaSim
 Visualization InfluenzaViz
     plot: 'diagram';
     for: 'InfluenzaSim';
-    data: #(I);
     xLabel: 'Time (days)'.
