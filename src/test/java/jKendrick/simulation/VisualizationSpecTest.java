@@ -60,12 +60,11 @@ class VisualizationSpecTest {
 
     @Test
     void withoutDataThereIsOneSeriesPerStatus() throws IOException {
-        GroundModel m = SolversTest.model(1); // its Visualization has no data: argument
+        GroundModel m = SolversTest.model(1); // its Visualization plots the infectious only
         Trajectory t = new RungeKuttaSolver(1).solve(m, 0, 5, 1).get(0);
         VisualizationSpec spec = Kendrick.visualizations(m).get(0);
-        assertTrue(spec.data.isEmpty());
-        assertEquals(List.of("S", "E", "I", "R"), new ArrayList<>(spec.series(t).keySet()));
-        assertArrayEquals(t.aggregate("status").get("E"), spec.series(t).get("E"), 1e-12);
+        assertEquals(List.of("I"), new ArrayList<>(spec.series(t).keySet()));
+        assertArrayEquals(t.aggregate("status").get("I"), spec.series(t).get("I"), 1e-12);
 
         GroundModel sir = Kendrick.load(SolversTest.SIR); // no Visualization entity at all: a default one
         Trajectory u = new RungeKuttaSolver(1).solve(sir, 0, 5, 1).get(0);

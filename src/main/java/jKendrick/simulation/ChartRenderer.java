@@ -13,6 +13,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -56,6 +57,8 @@ public final class ChartRenderer {
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Line);
         chart.getStyler().setMarkerSize(0);
         st.setSeriesColors(PALETTE);
+        st.setAntiAlias(true);
+        st.setLocale(Locale.US);
         boolean several = runs.size() > 1;
         Color[] colors = chart.getStyler().getSeriesColors();
         for (int r = 0; r < runs.size(); r++) {
@@ -71,7 +74,24 @@ public final class ChartRenderer {
             }
         }
         if (several) renameFirstRunLegends(chart, runs.get(0), spec);
+        defeatDataPointTicks(chart, runs.get(0).times);
         return chart;
+    }
+
+    /**
+     * XChart 3.8 puts the ticks of the x axis on data points when the x values of the series are
+     * equally spaced, which the times of a trajectory always are, and then labels them with values
+     * such as 0, 94, 188... An invisible series with one x value between two times makes the set
+     * of x values unequally spaced, so that the usual round ticks (0, 200, 400...) are used.
+     */
+    private static void defeatDataPointTicks(XYChart chart, double[] times) {
+        if (times.length < 2) return;
+        double[] x = {times[0], times[0] + 0.5 * (times[1] - times[0])};
+        double y = chart.getSeriesMap().values().iterator().next().getYData()[0];
+        XYSeries s = chart.addSeries(" ", x, new double[]{y, y});
+        s.setShowInLegend(false);
+        s.setMarker(SeriesMarkers.NONE);
+        s.setLineColor(new Color(0, 0, 0, 0));
     }
 
     /** With several runs, the legend shows the series names without the run number. */
