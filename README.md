@@ -249,7 +249,10 @@ reading and the stochastic solvers say so.
 Simulation), `data:` (`#(I_species)`: one series per species, the infectious summed over the other
 attributes; `#(I)`: the total; `#(I_species_zone)`: one per species and zone; absent: one series per
 status), `legendTitle:`, `legends:` (renames the series, in order), `xLabel:`, and optionally `yLabel:`
-and `title:`. With several stochastic runs every run is drawn as a thin curve of its series' colour.
+and `title:`. Charts are drawn in the style of the Pharo implementation's `KEChart`: white background, no grid,
+thin lines, legend under the plot, "Time (days)" and "Number of individuals" as default axis titles, no
+chart title unless `title:` is given. With several stochastic runs every run is drawn as a thin curve of
+its series' colour.
 
 ### Errors
 

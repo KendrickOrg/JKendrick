@@ -71,8 +71,9 @@ class VisualizationSpecTest {
         Trajectory u = new RungeKuttaSolver(1).solve(sir, 0, 5, 1).get(0);
         List<VisualizationSpec> specs = Kendrick.visualizations(sir);
         assertEquals(1, specs.size());
-        assertEquals("Time", specs.get(0).xLabel);
-        assertEquals("Sc", specs.get(0).title);
+        assertEquals("Time (days)", specs.get(0).xLabel);
+        assertEquals("Number of individuals", specs.get(0).yLabel);
+        assertEquals(null, specs.get(0).title);
         assertEquals(List.of("S", "I", "R"), new ArrayList<>(specs.get(0).series(u).keySet()));
     }
 

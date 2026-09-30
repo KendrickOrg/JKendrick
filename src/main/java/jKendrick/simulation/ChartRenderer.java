@@ -6,6 +6,7 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.Styler;
+import org.knowm.xchart.style.XYStyler;
 import org.knowm.xchart.style.markers.SeriesMarkers;
 
 import java.awt.Color;
@@ -25,14 +26,36 @@ import java.util.Map;
 public final class ChartRenderer {
     private ChartRenderer() {}
 
+    /** Qualitative palette in the spirit of the Pharo charts (Set1): red, blue, green, purple, orange, brown, pink, grey. */
+    private static final Color[] PALETTE = {
+            new Color(0xe4, 0x1a, 0x1c), new Color(0x37, 0x7e, 0xb8), new Color(0x4d, 0xaf, 0x4a), new Color(0x98, 0x4e, 0xa3),
+            new Color(0xff, 0x7f, 0x00), new Color(0xa6, 0x56, 0x28), new Color(0xf7, 0x81, 0xbf), new Color(0x99, 0x99, 0x99)};
+
     /** The chart of the runs according to the specification. */
     public static XYChart chart(VisualizationSpec spec, List<Trajectory> runs) {
         if (runs.isEmpty()) throw new IllegalArgumentException("nothing to plot: no run");
-        XYChart chart = new XYChartBuilder().width(800).height(600)
-                .title(spec.title).xAxisTitle(spec.xLabel).yAxisTitle(spec.yLabel).build();
-        chart.getStyler().setLegendPosition(Styler.LegendPosition.OutsideE);
+        XYChart chart = new XYChartBuilder().width(800).height(500)
+                .xAxisTitle(spec.xLabel).yAxisTitle(spec.yLabel).build();
+        if (spec.title != null) chart.setTitle(spec.title);
+        // the look of the Pharo implementation's charts (Roassal): white, no grid, thin lines,
+        // legend in a box under the plot
+        XYStyler st = chart.getStyler();
+        st.setChartTitleVisible(spec.title != null);
+        st.setChartBackgroundColor(Color.WHITE);
+        st.setPlotBackgroundColor(Color.WHITE);
+        st.setPlotBorderVisible(false);
+        st.setPlotGridLinesVisible(false);
+        st.setAxisTickMarksColor(new Color(0x88, 0x88, 0x88));
+        st.setAxisTickLabelsColor(new Color(0x44, 0x44, 0x44));
+        st.setChartFontColor(new Color(0x44, 0x44, 0x44));
+        st.setLegendPosition(Styler.LegendPosition.OutsideS);
+        st.setLegendLayout(Styler.LegendLayout.Horizontal);
+        st.setLegendBackgroundColor(Color.WHITE);
+        st.setLegendBorderColor(new Color(0xcc, 0xcc, 0xcc));
+        st.setLegendSeriesLineLength(14);
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Line);
         chart.getStyler().setMarkerSize(0);
+        st.setSeriesColors(PALETTE);
         boolean several = runs.size() > 1;
         Color[] colors = chart.getStyler().getSeriesColors();
         for (int r = 0; r < runs.size(); r++) {
@@ -43,10 +66,8 @@ public final class ChartRenderer {
                 XYSeries s = chart.addSeries(label, t.times, e.getValue());
                 s.setMarker(SeriesMarkers.NONE);
                 s.setLineColor(colors[i++ % colors.length]);
-                if (several) {
-                    s.setShowInLegend(r == 0);
-                    s.setLineWidth(1f);
-                }
+                s.setLineWidth(several ? 0.8f : 1.4f);
+                if (several) s.setShowInLegend(r == 0);
             }
         }
         if (several) renameFirstRunLegends(chart, runs.get(0), spec);

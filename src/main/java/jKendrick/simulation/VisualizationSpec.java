@@ -22,8 +22,8 @@ import java.util.Map;
  *     legendTitle: 'Infectious';
  *     legends: #('humans' 'birds');
  *     xLabel: 'Time (days)';
- *     yLabel: 'Individuals';     -- optional
- *     title: 'Avian influenza'.  -- optional
+ *     yLabel: 'Number of individuals';  -- optional (the default, as in the Pharo implementation)
+ *     title: 'Avian influenza'.  -- optional (no title by default)
  * </pre>
  * A data name is an attribute value ({@code I}) optionally followed by attribute names
  * ({@code I_species}, {@code I_species_zone}): the series are the totals of the compartments
@@ -76,8 +76,8 @@ public final class VisualizationSpec {
         }
         String legendTitle = string(args, "legendTitle", null);
         return new VisualizationSpec(entityName, plot, string(args, "for", null), data, legendTitle, legends,
-                string(args, "xLabel", "Time"), string(args, "yLabel", legendTitle != null ? legendTitle : "Individuals"),
-                string(args, "title", entityName));
+                string(args, "xLabel", "Time (days)"), string(args, "yLabel", "Number of individuals"),
+                string(args, "title", null));
     }
 
     private static String string(Map<String, Ast.Literal> args, String key, String dflt) {
