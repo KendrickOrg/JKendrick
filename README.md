@@ -139,7 +139,8 @@ curve per status.
 opens KendrickStudio: a script editor on the left, the chart of the script's `Visualization` entity
 on the right, a log below. *Open...* loads a script, *Run* (or Ctrl+Enter) runs it in the background
 and shows the chart and the totals; errors are logged with their line and column and the caret is
-moved to the first one. *Save* and *Save as...* write the script, *Save chart as PNG...* the chart.
+moved to the first one. On the chart, drag a rectangle to zoom on a time interval and double-click
+(or use the *Reset Zoom* button) to see the whole run again; `--show` on the command line opens the same chart. *Save* and *Save as...* write the script, *Save chart as PNG...* the chart.
 
 ### Using JKendrick2 from Java
 

@@ -58,6 +58,11 @@ public final class ChartRenderer {
         chart.getStyler().setMarkerSize(0);
         st.setSeriesColors(PALETTE);
         st.setAntiAlias(true);
+        // in a window (XChartPanel): drag a rectangle to zoom on a time interval, double-click to reset
+        st.setZoomEnabled(true);
+        st.setZoomResetByDoubleClick(true);
+        st.setZoomResetByButton(true);
+        st.setZoomSelectionColor(new Color(0x37, 0x7e, 0xb8, 0x30));
         st.setLocale(Locale.US);
         boolean several = runs.size() > 1;
         Color[] colors = chart.getStyler().getSeriesColors();
