@@ -74,6 +74,10 @@ public final class ChartRenderer {
             }
         }
         if (several) renameFirstRunLegends(chart, runs.get(0), spec);
+        if (spec.series(runs.get(0)).size() > 8) { // too many for one row under the plot
+            st.setLegendPosition(Styler.LegendPosition.OutsideE);
+            st.setLegendLayout(Styler.LegendLayout.Vertical);
+        }
         defeatDataPointTicks(chart, runs.get(0).times);
         return chart;
     }

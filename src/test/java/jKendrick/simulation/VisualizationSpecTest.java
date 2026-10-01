@@ -20,7 +20,7 @@ class VisualizationSpecTest {
 
     @Test
     void theVisualizationEntityIsCollected() throws IOException {
-        GroundModel m = SolversTest.model(3);
+        GroundModel m = SolversTest.model(4);
         assertEquals(1, m.visualizations.size());
         VisualizationSpec spec = Kendrick.visualizations(m).get(0);
         assertEquals("InfluenzaViz", spec.name);
@@ -32,19 +32,27 @@ class VisualizationSpecTest {
         assertEquals(1, spec.data.size());
         assertEquals("I", spec.data.get(0).base);
         assertEquals(List.of("species"), spec.data.get(0).indices);
+        // Model 3 plots the infectious birds per zone
+        VisualizationSpec perZone = Kendrick.visualizations(SolversTest.model(3)).get(0);
+        assertEquals(List.of("birds", "zone"), perZone.data.get(0).indices);
+        assertTrue(perZone.legends.isEmpty());
     }
 
     @Test
     void dataNamesSumOverTheAttributesNotListed() throws IOException {
         GroundModel m = SolversTest.model(3); // status x species x zone(15)
         Trajectory t = new RungeKuttaSolver(1).solve(m, 0, 10, 1).get(0);
-        Map<String, double[]> series = Kendrick.visualizations(m).get(0).series(t);
+        Map<String, double[]> perZone = Kendrick.visualizations(m).get(0).series(t); // I_birds_zone
+        assertEquals(15, perZone.size());
+        assertEquals(List.of("I_birds_1", "I_birds_2"), new ArrayList<>(perZone.keySet()).subList(0, 2));
+        assertEquals(11, perZone.get("I_birds_1").length);
         // legends rename the series I_humans, I_birds in order
+        Map<String, double[]> series = VisualizationSpec.of("V",
+                args("data", array(id("I_species")), "legends", array(str("humans"), str("birds")))).series(t);
         assertEquals(List.of("humans", "birds"), new ArrayList<>(series.keySet()));
         Map<String, double[]> expected = t.aggregate("status", "species");
         assertArrayEquals(expected.get("I_humans"), series.get("humans"), 1e-12);
         assertArrayEquals(expected.get("I_birds"), series.get("birds"), 1e-12);
-        assertEquals(11, series.get("birds").length);
 
         // I alone: the total of the infectious; I_species_zone: one series per (species, zone)
         VisualizationSpec total = VisualizationSpec.of("V", args("data", array(id("I"))));
@@ -56,6 +64,9 @@ class VisualizationSpecTest {
         assertEquals(30, byZone.size());
         assertTrue(byZone.containsKey("I_humans_1") && byZone.containsKey("I_birds_15"));
         assertArrayEquals(t.aggregate("status", "species", "zone").get("I_birds_3"), byZone.get("I_birds_3"), 1e-12);
+        // an attribute value as index restricts the series: I_birds_zone is the infectious birds per zone
+        assertArrayEquals(byZone.get("I_birds_3"), perZone.get("I_birds_3"), 1e-12);
+        assertArrayEquals(expected.get("I_birds"), VisualizationSpec.of("V", args("data", array(id("I_birds")))).series(t).get("I_birds"), 1e-12);
     }
 
     @Test
@@ -86,7 +97,7 @@ class VisualizationSpecTest {
         assertThrows(IllegalArgumentException.class,
                 () -> VisualizationSpec.of("V", args("data", array(id("Z_species")))).series(t));
         assertThrows(IllegalArgumentException.class,
-                () -> VisualizationSpec.of("V", args("data", array(id("I_colour")))).series(t));
+                () -> VisualizationSpec.of("V", args("data", array(id("I_colour")))).series(t)); // neither attribute nor value
         // three legends for two series
         assertThrows(IllegalArgumentException.class, () -> VisualizationSpec.of("V",
                 args("data", array(id("I_species")), "legends", array(str("a"), str("b"), str("c")))).series(t));

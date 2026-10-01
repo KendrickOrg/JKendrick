@@ -256,7 +256,8 @@ reading and the stochastic solvers say so.
 
 `Visualization` takes `plot: 'diagram'` (series against time, the only kind for now), `for:` (a
 Simulation), `data:` (`#(I_species)`: one series per species, the infectious summed over the other
-attributes; `#(I)`: the total; `#(I_species_zone)`: one per species and zone; absent: one series per
+attributes; `#(I)`: the total; `#(I_species_zone)`: one per species and zone; `#(I_birds_zone)`: an
+attribute value as index selects it, here the infectious birds, one series per zone; absent: one series per
 status), `legendTitle:`, `legends:` (renames the series, in order), `xLabel:`, and optionally `yLabel:`
 and `title:`. With several stochastic runs every run is drawn as a thin curve of its series' colour.
 

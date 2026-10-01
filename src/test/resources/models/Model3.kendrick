@@ -46,7 +46,6 @@ Simulation InfluenzaSim
 Visualization InfluenzaViz
     plot: 'diagram';
     for: 'InfluenzaSim';
-    data: #(I_species);
-    legendTitle: 'Infectious';
-    legends: #('humans' 'birds');
+    data: #(I_birds_zone);
+    legendTitle: 'Infectious birds';
     xLabel: 'Time (days)'.

@@ -109,15 +109,23 @@ public final class VisualizationSpec {
         return all;
     }
 
+    /**
+     * The series of one data name: its base is an attribute value (the compartments it selects);
+     * each index is either an attribute name, which splits the series by the values of that
+     * attribute (I_species: one series per species), or an attribute value, which restricts the
+     * series to it (I_birds_zone: the infectious birds, one series per zone).
+     */
     private static Map<String, double[]> seriesOf(Ast.Indexed name, Trajectory t) {
         ComposedModel m = t.model.model;
         Attribute own = m.attributeOfValue(name.base);
         if (own == null) throw new IllegalArgumentException("Visualization: '" + name + "' does not start with an attribute value");
         List<String> groupBy = new ArrayList<>();
+        Map<String, String> fixed = new LinkedHashMap<>(); // attribute -> value
+        fixed.put(own.name, name.base);
         for (String token : name.indices) {
-            if (m.attribute(token) == null)
-                throw new IllegalArgumentException("Visualization: '" + name + "': " + token + " is not an attribute");
-            groupBy.add(token);
+            if (m.attribute(token) != null) groupBy.add(token);
+            else if (m.attributeOfValue(token) != null) fixed.put(m.attributeOfValue(token).name, token);
+            else throw new IllegalArgumentException("Visualization: '" + name + "': " + token + " is neither an attribute nor a value");
         }
         Map<String, double[]> out = new LinkedHashMap<>();
         // keys in the order of the attributes' values: pre-create them
@@ -128,12 +136,15 @@ public final class VisualizationSpec {
             for (String k : keys) for (String v : m.attribute(a).values) next.add(k.isEmpty() ? v : k + "_" + v);
             keys = next;
         }
-        for (String k : keys) out.put(k.isEmpty() ? name.base : name.base + "_" + k, new double[t.times.length]);
+        String prefix = String.join("_", fixed.values());
+        for (String k : keys) out.put(k.isEmpty() ? prefix : prefix + "_" + k, new double[t.times.length]);
         List<Compartment> comps = m.compartments;
         for (int c = 0; c < comps.size(); c++) {
             Compartment comp = comps.get(c);
-            if (!name.base.equals(comp.get(own.name))) continue;
-            StringBuilder key = new StringBuilder(name.base);
+            boolean selected = true;
+            for (Map.Entry<String, String> f : fixed.entrySet()) selected &= f.getValue().equals(comp.get(f.getKey()));
+            if (!selected) continue;
+            StringBuilder key = new StringBuilder(prefix);
             for (String a : groupBy) key.append('_').append(comp.get(a));
             double[] s = out.get(key.toString());
             for (int i = 0; i < t.times.length; i++) s[i] += t.states[i][c];
