@@ -14,7 +14,7 @@ Composition Influenza
 Scenario Scr1
     on: 'Influenza';
     mu: 0.00137;
-    beta: 0.24;
+    beta: 0.5;
     gamma: 0.233;
     sigma: 0.67;
     nu: 0.00274;

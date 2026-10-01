@@ -76,8 +76,8 @@ class ModelBuilderTest {
         assertEquals(0.0000365, g.parameter("mu", humans1, 0, y), 1e-12);
         assertEquals(0.1, g.parameter("rho", birds1, 0, y), 1e-12);
         // lambda_pk = sum_i beta_ki * I_ip / N_ip, with only 100 infectious birds in zone 1
-        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", birds1, 0, y), 1e-15);
-        assertEquals(0.012 * 100 / 50000, g.parameter("lambda", humans1, 0, y), 1e-15);
+        assertEquals(0.5 * 100 / 50000, g.parameter("lambda", birds1, 0, y), 1e-15);
+        assertEquals(0.025 * 100 / 50000, g.parameter("lambda", humans1, 0, y), 1e-15);
         assertEquals(0.0, g.parameter("lambda", compartment("status", "S", "species", "birds", "zone", "2"), 0, y), 1e-15);
         assertTrue(g.parameters.get("beta") instanceof ParameterValue.Table);
         assertTrue(g.parameters.get("lambda") instanceof ParameterValue.Formula);
@@ -87,7 +87,7 @@ class ModelBuilderTest {
     void model1UsesTheConcernsDefaultFormulaForLambda() throws IOException {
         GroundModel g = model(1);
         double[] y = g.initialState();
-        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", compartment("status", "S"), 0, y), 1e-15);
+        assertEquals(0.5 * 100 / 50000, g.parameter("lambda", compartment("status", "S"), 0, y), 1e-15);
     }
 
     @Test
@@ -133,7 +133,7 @@ class ModelBuilderTest {
         GroundModel g = model(4);
         double[] y = g.initialState();
         Compartment sBirds1 = compartment("status", "S", "species", "birds", "zone", "1", "isolation", "free");
-        assertEquals(0.24 * 100 / 50000, g.parameter("lambda", sBirds1, 0, y), 1e-15);
+        assertEquals(0.5 * 100 / 50000, g.parameter("lambda", sBirds1, 0, y), 1e-15);
         // move the 100 infectious birds into isolation: lambda drops to 0, N - I_isolated = 49900
         int free = g.model.indexOf(compartment("status", "I", "species", "birds", "zone", "1", "isolation", "free"));
         int isolated = g.model.indexOf(compartment("status", "I", "species", "birds", "zone", "1", "isolation", "isolated"));
@@ -147,7 +147,7 @@ class ModelBuilderTest {
         GroundModel g = model(1);
         double[] y = g.initialState(); // S=49900 E=0 I=100 R=0
         double[] dy = g.derivatives(0, y);
-        double mu = 0.00137, beta = 0.24, gamma = 0.233, N = 50000, lambda = beta * 100 / N;
+        double mu = 0.00137, beta = 0.5, gamma = 0.233, N = 50000, lambda = beta * 100 / N;
         assertEquals(mu * N - lambda * 49900 - mu * 49900, dy[0], 1e-9);
         assertEquals(lambda * 49900, dy[1], 1e-9);
         assertEquals(-gamma * 100 - mu * 100, dy[2], 1e-9);

@@ -48,7 +48,7 @@ class KendrickParserFacadeTest {
         assertEquals(7, sc.assignments.size());
         Ast.ValueAssignment beta = (Ast.ValueAssignment) sc.assignments.get(1);
         assertEquals("beta", beta.target.base);
-        assertEquals(0.24, beta.value.scalar.doubleValue());
+        assertEquals(0.5, beta.value.scalar.doubleValue());
 
         Ast.Simulation sim = s.entitiesOf(Ast.Simulation.class).get(0);
         assertEquals("rungeKutta", sim.arguments.get("solver").string);
@@ -83,7 +83,7 @@ class KendrickParserFacadeTest {
         Ast.ValueAssignment beta = find(sc, "beta");
         assertEquals(List.of("ki"), beta.target.indices);
         assertEquals(2, beta.value.rank());
-        assertEquals(0.012, beta.value.elements.get(0).elements.get(1).scalar.doubleValue());
+        assertEquals(0.025, beta.value.elements.get(0).elements.get(1).scalar.doubleValue());
     }
 
     @Test

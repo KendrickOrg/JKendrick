@@ -42,7 +42,7 @@ class SolversTest {
         assertEquals(1501, t.size());
         assertEquals(1500.0, t.times[1500]);
         Map<String, double[]> byStatusSpecies = t.aggregate("status", "species");
-        assertEquals(273.5, byStatusSpecies.get("I_birds")[1500], 273.5 * 5e-3); // Octave, M3
+        assertEquals(6914.5, byStatusSpecies.get("I_birds")[1500], 6914.5 * 5e-3); // Octave, M3
         assertEquals(8, byStatusSpecies.size());
         assertTrue(t.toCsv().startsWith("t,S_humans_1,S_humans_2"));
     }
@@ -52,7 +52,7 @@ class SolversTest {
         GroundModel m = model(1);
         double coarse = new RungeKuttaSolver(1).solve(m, 0, 1500, 1).get(0).last()[2];
         double fine = new RungeKuttaSolver(8).solve(m, 0, 1500, 1).get(0).last()[2];
-        assertEquals(18.54, fine, 18.54 * 2e-3);
+        assertEquals(458.58, fine, 458.58 * 2e-3);
         assertEquals(fine, coarse, fine * 2e-3);
     }
 

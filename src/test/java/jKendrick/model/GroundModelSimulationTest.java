@@ -66,26 +66,27 @@ class GroundModelSimulationTest {
     void model1_matchesMatlabSEIRS() throws IOException {
         GroundModel g = model(1);
         Map<String, Double> t = totals(g, rk4(g, 0, 1500, 1));
-        // Octave, M1: final state [49027.1 6.492 18.54 947.8]
-        assertClose(49027.1, t.get("S"), "S");
-        assertClose(6.492, t.get("E"), "E");
-        assertClose(18.54, t.get("I"), "I");
-        assertClose(947.8, t.get("R"), "R");
+        // Octave, M1 (beta = 0.5, R0 = 2.13): final state [23422.4 160.03 458.58 25959.0];
+        // the wave peaks at 6629 infectious on day 37
+        assertClose(23422.4, t.get("S"), "S");
+        assertClose(160.03, t.get("E"), "E");
+        assertClose(458.58, t.get("I"), "I");
+        assertClose(25959.0, t.get("R"), "R");
     }
 
     @Test
     void model2_birdsBehaveAsInModel1AndHumansAreInfectedByBirds() throws IOException {
         GroundModel g = model(2);
         Map<String, Double> t = totals(g, rk4(g, 0, 1500, 1));
-        // Octave, M2: [S_h S_b E_h E_b I_h I_b R_h R_b] = [4992.65 49027.1 0.04438 6.493 0.08863 18.54 7.218 947.8]
-        assertClose(4992.65, t.get("S_humans"), "S_humans");
-        assertClose(49027.1, t.get("S_birds"), "S_birds");
-        assertClose(0.04438, t.get("E_humans"), "E_humans");
-        assertClose(6.493, t.get("E_birds"), "E_birds");
-        assertClose(0.08863, t.get("I_humans"), "I_humans");
-        assertClose(18.54, t.get("I_birds"), "I_birds");
-        assertClose(7.218, t.get("R_humans"), "R_humans");
-        assertClose(947.8, t.get("R_birds"), "R_birds");
+        // Octave, M2: [S_h S_b E_h E_b I_h I_b R_h R_b] = [4614.9 23422.4 2.1177 160.05 4.2431 458.55 378.69 25959]
+        assertClose(4614.9, t.get("S_humans"), "S_humans");
+        assertClose(23422.4, t.get("S_birds"), "S_birds");
+        assertClose(2.1177, t.get("E_humans"), "E_humans");
+        assertClose(160.05, t.get("E_birds"), "E_birds");
+        assertClose(4.2431, t.get("I_humans"), "I_humans");
+        assertClose(458.55, t.get("I_birds"), "I_birds");
+        assertClose(378.69, t.get("R_humans"), "R_humans");
+        assertClose(25959, t.get("R_birds"), "R_birds");
     }
 
     @Test
@@ -93,32 +94,39 @@ class GroundModelSimulationTest {
         GroundModel g = model(3);
         double[] y = rk4(g, 0, 1500, 1);
         Map<String, Double> t = totals(g, y);
-        // Octave, M3, totals over the 15 patches at t=1500 (humans / birds): S 74875.5 / 733374,
-        // E 0.6553 / 95.61, I 1.311 / 273.5, R 122.5 / 16257
-        assertClose(74875.5, t.get("S_humans"), "S_humans");
-        assertClose(733374, t.get("S_birds"), "S_birds");
-        assertClose(0.6553, t.get("E_humans"), "E_humans");
-        assertClose(95.61, t.get("E_birds"), "E_birds");
-        assertClose(1.311, t.get("I_humans"), "I_humans");
-        assertClose(273.5, t.get("I_birds"), "I_birds");
-        assertClose(122.5, t.get("R_humans"), "R_humans");
-        assertClose(16257, t.get("R_birds"), "R_birds");
+        // Octave, M3, totals over the 15 patches at t=1500 (humans / birds): S 69227.3 / 351444,
+        // E 31.934 / 2414.5, I 63.955 / 6914.5, R 5676.8 / 389227; the wave peaks at 67200 infectious birds on day 60
+        assertClose(69227.3, t.get("S_humans"), "S_humans");
+        assertClose(351444, t.get("S_birds"), "S_birds");
+        assertClose(31.934, t.get("E_humans"), "E_humans");
+        assertClose(2414.5, t.get("E_birds"), "E_birds");
+        assertClose(63.955, t.get("I_humans"), "I_humans");
+        assertClose(6914.5, t.get("I_birds"), "I_birds");
+        assertClose(5676.8, t.get("R_humans"), "R_humans");
+        assertClose(389227, t.get("R_birds"), "R_birds");
         double total = 0;
         for (double v : y) total += v;
         assertEquals(825000, total, 1e-6);
     }
 
     @Test
-    void model4_isolationExtinguishesTheEpidemicAsInMatlab() throws IOException {
+    void model4_isolationDampensTheEpidemicAsInMatlab() throws IOException {
         GroundModel g = model(4);
         double[] y = rk4(g, 0, 1500, 1);
         Map<String, Double> t = totals(g, y);
-        // Octave, M4: with delta = 0.2 the controlled reproduction number of birds is 0.55 and the
-        // epidemic dies out: infectious ~1e-17; R totals 0.009915 (humans), 0.4833 (birds)
-        assertEquals(0.0, t.get("I_birds"), 1e-6);
-        assertEquals(0.0, t.get("I_humans"), 1e-6);
-        assertClose(0.4833, t.get("R_birds"), "R_birds");
-        assertClose(0.009915, t.get("R_humans"), "R_humans");
+        // Octave, M4 (free + isolated, humans / birds): S 74194.9 / 654902, E 4.017 / 528.4,
+        // I 8.002 / 1504.1, R 793.1 / 93064.9; with delta = 0.2 the controlled reproduction number of
+        // the birds is 1.15 and the wave peaks at 4330 infectious birds on day 159 instead of 67200.
+        // The two models differ slightly: the MATLAB births are mu*N0 into the free susceptibles,
+        // whereas the tensor sum replicates the SEIRS births over the isolation attribute, so that
+        // the composed model also creates newborns in the isolated compartments (mu * isolated
+        // population). Hence the looser tolerance (2% on the small compartments).
+        assertEquals(74194.9, t.get("S_humans"), 74194.9 * 1e-3);
+        assertEquals(654902, t.get("S_birds"), 654902 * 2e-3);
+        assertEquals(1504.1, t.get("I_birds"), 1504.1 * 3e-2);
+        assertEquals(8.002, t.get("I_humans"), 8.002 * 3e-2);
+        assertEquals(93064.9, t.get("R_birds"), 93064.9 * 2e-2);
+        assertEquals(793.1, t.get("R_humans"), 793.1 * 2e-2);
         double total = 0;
         for (double v : y) total += v;
         assertEquals(825000, total, 1e-6);

@@ -19,7 +19,7 @@ Scenario Scr1
     on: 'Influenza';
     var: #((k in species) (i in species));
     mu_species: #(0.0000365 0.00137);
-    beta_ki: #(#(0 0.012) #(0 0.24));
+    beta_ki: #(#(0 0.025) #(0 0.5));
     gamma_species: #(0.25 0.233);
     sigma_species: #(0.5 0.67);
     nu: 0.00274;

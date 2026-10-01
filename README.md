@@ -74,7 +74,7 @@ following script is `src/test/resources/models/Model1.kendrick`, an SEIRS model 
     Scenario Scr1
         on: 'Influenza';
         mu: 0.00137;
-        beta: 0.24;
+        beta: 0.5;
         gamma: 0.233;
         sigma: 0.67;
         nu: 0.00274;
@@ -106,7 +106,7 @@ Separation of concerns shows when the model grows. `Model2.kendrick` adds a seco
 
 and the composition `model: 'SEIRS'; model: 'MultiSpecies'` yields the 8-compartment model
 (S/E/I/R x humans/birds) automatically; the scenario then gives the species-dependent values with
-indexed names: `mu_species: #(0.0000365 0.00137)`, a transmission matrix `beta_ki: #(#(0 0.012) #(0 0.24))`
+indexed names: `mu_species: #(0.0000365 0.00137)`, a transmission matrix `beta_ki: #(#(0 0.025) #(0 0.5))`
 over variables bound by `var: #((k in species) (i in species))`, and the force of infection
 `lambda_k: #(sum_ (i in species) beta_ki*I_i/N_i)`. `Model3.kendrick` adds a `MetaPopulation` concern
 (15 zones on a one-way ring, `topology: #(ring oneWay)`, and a `transitionRate:`) and `Model4.kendrick` an `Isolation` concern
@@ -122,10 +122,10 @@ species) at the end of the run:
 
     Influenza: 1 concerns, 4 compartments, 9 transitions
     1 run(s), t = 0.0 .. 1500.0
-      S                          49027.1486
-      E                              6.4936
-      I                             18.5352
-      R                            947.8226
+      S                          23422.4028
+      E                            160.0782
+      I                            458.5267
+      R                          25958.9923
 
 `--csv` writes the full trajectory of the first run (one column per compartment), `--png` draws the
 script's `Visualization` entities (one PNG per entity, suffixed with the entity's name when there are
@@ -228,7 +228,7 @@ follows an arc: the concern's transitions are one per arc, replicated over the o
 
 - A **parameter** name denotes its value in the scenario: a constant (`mu: 0.00137`), a table indexed by
   attributes (`mu_species: #(0.0000365 0.00137)`, one value per species, in the order of the attribute's
-  values) or by bound variables (`beta_ki: #(#(0 0.012) #(0 0.24))` after `var: #((k in species) (i in species))`),
+  values) or by bound variables (`beta_ki: #(#(0 0.025) #(0 0.5))` after `var: #((k in species) (i in species))`),
   or a formula (`lambda_pk: #(sum_ (i in species) beta_ki*I_ip/N_ip)`). An unindexed reference (`mu`) takes
   the indices from the compartment it is evaluated at; an indexed one (`beta_ki`) supplies them.
   A formula given in a concern (`lambda: #(beta*I/N)`) is a default the scenario may override.
