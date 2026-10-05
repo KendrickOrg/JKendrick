@@ -206,6 +206,17 @@ class ModelBuilderTest {
         double[] dy = g.derivatives(0, g.initialState());
         assertEquals(-1.0, dy[0], 1e-12);
         assertEquals(1.0, dy[1], 1e-12);
+        // the same term with the same sign in two equations makes the pairing ambiguous: ODE reading only
+        String ambiguous = "KModel A attribute: #(status in (S I R)); parameters: #(beta);\n"
+                + "    equations: #(S:t=0 - beta*S. I:t=beta*S. R:t=beta*S).\n" // +beta*S in I and in R
+                + "Composition C model: 'A'.\nScenario Sc on: 'C'; beta: 1; S: 10; I: 1.\n";
+        GroundModel h = ModelBuilder.build(KendrickParserFacade.parse(ambiguous));
+        assertTrue(h.model.concerns.get(0).definedByOdesOnly());
+        assertEquals(0, h.transitions().size());
+        double[] dh = h.derivatives(0, h.initialState());
+        assertEquals(-10.0, dh[0], 1e-12);
+        assertEquals(10.0, dh[1], 1e-12);
+        assertEquals(10.0, dh[2], 1e-12);
     }
 
     @Test

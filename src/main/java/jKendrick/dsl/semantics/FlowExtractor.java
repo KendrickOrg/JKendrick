@@ -24,7 +24,8 @@ import java.util.Map;
  *       ({@code mu*N} in S).</li>
  * </ul>
  * The equations are in flow form when every negative term contains its own compartment as a
- * factor. Otherwise {@link #extract} returns null and the concern keeps its ODE reading only.
+ * factor and no term appears twice with the same sign in the system (the pairing would be
+ * ambiguous). Otherwise {@link #extract} returns null and the concern keeps its ODE reading only.
  */
 public final class FlowExtractor {
     private FlowExtractor() {}
@@ -85,11 +86,17 @@ public final class FlowExtractor {
             if (!flatten(eq.getValue(), 1, list)) return null;
             terms.put(eq.getKey(), list);
         }
-        // 2. index the positive terms by their canonical text, per compartment
+        // 2. index the positive terms by their canonical text, per compartment; a term may appear
+        //    at most once with each sign in the whole system, otherwise the pairing of -T with +T
+        //    would be ambiguous and the equations are not read as flows
         Map<String, Map<String, Term>> positives = new LinkedHashMap<>();
+        java.util.Set<String> seenPositive = new java.util.HashSet<>(), seenNegative = new java.util.HashSet<>();
         for (Map.Entry<String, List<Term>> e : terms.entrySet()) {
             Map<String, Term> byKey = new LinkedHashMap<>();
-            for (Term t : e.getValue()) if (t.sign > 0) byKey.put(t.key(), t);
+            for (Term t : e.getValue()) {
+                if (!(t.sign > 0 ? seenPositive : seenNegative).add(t.key())) return null;
+                if (t.sign > 0) byKey.put(t.key(), t);
+            }
             positives.put(e.getKey(), byKey);
         }
         // 3. each negative term is an outflow: to the compartment that has the same term as an inflow, or to the outside
