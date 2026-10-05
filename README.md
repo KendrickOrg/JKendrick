@@ -198,6 +198,7 @@ The grammar is `src/main/antlr4/jKendrick/dsl/grammar/Kendrick.g4` (ANTLR 4). In
                   | 'transitions:' '#(' transition ('.' transition)* '.'? ')'
                   | 'connectionMatrix:' '#(' ('#(' NUMBER+ ')')+ ')'
                   | 'topology:' '#(' ID ID? ')'                 -- ring | line | complete, oneWay | twoWay
+                  | 'entry:' '#(' (ID | NUMBER) ')'             -- the value taken at entry into the population
                   | 'transitionRate:' '#(' expr ')'
                   | KEYWORD '#(' expr ')'                       -- default formula of a parameter
     domain        : '(' (ID | NUMBER)+ ')' | '(' 'range' NUMBER NUMBER ')'
@@ -224,6 +225,15 @@ one, the last to the first), `line` (each zone to the next one) or `complete` (e
 A topology is two-way unless `oneWay` is given (`topology: #(ring oneWay)`; `twoWay` is accepted
 for emphasis). Both are exclusive and both need a `transitionRate:`, the rate at which an individual
 follows an arc: the concern's transitions are one per arc, replicated over the other concerns.
+
+An inflow from the outside (`Empty -- mu*N --> S`, a birth or an immigration) has no source
+compartment to be replicated from. By default an attribute is *inherited*: the inflow is replicated
+over its values, each receiving newcomers in proportion to its own population, which is right for
+species or zones. An attribute that is *acquired* during life (isolation, age, vaccination) declares
+with `entry:` the value every newcomer takes, `entry: #(free)`, `entry: #(young)`: the whole inflow
+then lands on that value and its rate is evaluated with the attribute summed out, so that `mu*N`
+is mu times the whole population, isolated individuals included. Without it, the isolation concern
+of Model 4 would create susceptible birds born isolated, and isolated for life.
 
 ### Meaning of names
 

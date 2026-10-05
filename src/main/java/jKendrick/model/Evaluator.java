@@ -175,7 +175,7 @@ public final class Evaluator {
                 free = ctx.owner.attribute.name;
             }
             for (Attribute a : m.attributes)
-                if (!constraints.containsKey(a.name) && !a.name.equals(free))
+                if (!constraints.containsKey(a.name) && !a.name.equals(free) && !ctx.free.contains(a.name))
                     constraints.put(a.name, ctx.current.get(a.name));
         }
         return constraints;

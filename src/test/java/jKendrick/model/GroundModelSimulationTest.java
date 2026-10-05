@@ -117,16 +117,16 @@ class GroundModelSimulationTest {
         // Octave, M4 (free + isolated, humans / birds): S 74194.9 / 654902, E 4.017 / 528.4,
         // I 8.002 / 1504.1, R 793.1 / 93064.9; with delta = 0.2 the controlled reproduction number of
         // the birds is 1.15 and the wave peaks at 4330 infectious birds on day 159 instead of 67200.
-        // The two models differ slightly: the MATLAB births are mu*N0 into the free susceptibles,
-        // whereas the tensor sum replicates the SEIRS births over the isolation attribute, so that
-        // the composed model also creates newborns in the isolated compartments (mu * isolated
-        // population). Hence the looser tolerance (2% on the small compartments).
-        assertEquals(74194.9, t.get("S_humans"), 74194.9 * 1e-3);
-        assertEquals(654902, t.get("S_birds"), 654902 * 2e-3);
-        assertEquals(1504.1, t.get("I_birds"), 1504.1 * 3e-2);
-        assertEquals(8.002, t.get("I_humans"), 8.002 * 3e-2);
-        assertEquals(93064.9, t.get("R_birds"), 93064.9 * 2e-2);
-        assertEquals(793.1, t.get("R_humans"), 793.1 * 2e-2);
+        // The agreement needs the entry value of the Isolation concern (newborns are free): without
+        // it the tensor sum would also create newborns in the isolated compartments.
+        assertClose(74194.9, t.get("S_humans"), "S_humans");
+        assertClose(654902, t.get("S_birds"), "S_birds");
+        assertClose(4.017, t.get("E_humans"), "E_humans");
+        assertClose(528.4, t.get("E_birds"), "E_birds");
+        assertClose(8.002, t.get("I_humans"), "I_humans");
+        assertClose(1504.1, t.get("I_birds"), "I_birds");
+        assertClose(793.1, t.get("R_humans"), "R_humans");
+        assertClose(93064.9, t.get("R_birds"), "R_birds");
         double total = 0;
         for (double v : y) total += v;
         assertEquals(825000, total, 1e-6);

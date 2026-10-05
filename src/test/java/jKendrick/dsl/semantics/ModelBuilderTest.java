@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -97,8 +98,11 @@ class ModelBuilderTest {
         // SEIRS read as flows: 9 local transitions (4 moves, 4 deaths, 1 birth) x 2 species x 15 zones = 270
         assertEquals(390, g3.transitions().size());
         GroundModel g4 = model(4);
-        // ring: 15 x 2 x 4 x 2 isolation states = 240; isolation: 2 x 4 x 2 x 15 = 240; SEIRS: 9 x 2 x 15 x 2 = 540
-        assertEquals(1020, g4.transitions().size());
+        // ring: 15 x 2 x 4 x 2 isolation states = 240; isolation: 2 x 4 x 2 x 15 = 240;
+        // SEIRS: 8 moves and deaths x 2 x 15 x 2 = 480, and the birth lands on the entry value only: 1 x 2 x 15 = 30
+        assertEquals(990, g4.transitions().size());
+        for (ComposedModel.Transition tr : g4.transitions())
+            if (tr.isBirth()) assertEquals("free", tr.to.get("isolation"), "births land on the entry value");
 
         double[] y = g4.initialState();
         Compartment iFree = compartment("status", "I", "species", "birds", "zone", "1", "isolation", "free");
@@ -214,6 +218,48 @@ class ModelBuilderTest {
         double[] dy = g.derivatives(0, g.initialState());
         assertEquals(0.1 * 100 - 0.5 * 90 - 0.1 * 90, dy[0], 1e-9);
         assertEquals(0.5 * 90 - 0.1 * 10, dy[1], 1e-9);
+    }
+
+    @Test
+    void inflowsLandOnTheEntryValueAndAreBornFromTheWholePopulation() throws IOException {
+        String sir = "KModel SIR attribute: #(status in (S I R)); parameters: #(beta gamma mu);\n"
+                + "  transitions: #(Empty -- mu*N --> S. status -- mu --> Empty. S -- beta*I/N --> I. I -- gamma --> R).\n";
+        String age = "KModel Age attribute: #(age in (young old)); parameters: #(a); %s transitions: #(young -- a --> old).\n";
+        String rest = "Composition C model: 'SIR'; model: 'Age'.\nScenario Sc on: 'C'; beta: 1; gamma: 0.1; mu: 0.01; a: 0.02; S_age: #(60 30); I_age: #(5 5).\n";
+        // without entry, age is inherited: one birth per age class, proportional to its population
+        GroundModel inherited = ModelBuilder.build(KendrickParserFacade.parse(sir + String.format(age, "") + rest));
+        double[] y = inherited.initialState();
+        double births = 0;
+        for (ComposedModel.Transition tr : inherited.transitions()) if (tr.isBirth()) {
+            births += inherited.propensity(tr, 0, y);
+            assertEquals(0.01 * (tr.to.get("age").equals("young") ? 65 : 35), inherited.propensity(tr, 0, y), 1e-12);
+        }
+        assertEquals(0.01 * 100, births, 1e-12);
+        // with entry: #(young), the whole inflow lands on the young, at the rate mu x whole population
+        GroundModel acquired = ModelBuilder.build(KendrickParserFacade.parse(sir + String.format(age, "entry: #(young);") + rest));
+        int count = 0;
+        for (ComposedModel.Transition tr : acquired.transitions()) if (tr.isBirth()) {
+            count++;
+            assertEquals("S_young", tr.to.toString());
+            assertEquals(0.01 * 100, acquired.propensity(tr, 0, acquired.initialState()), 1e-12);
+        }
+        assertEquals(1, count);
+        assertEquals(inherited.transitions().size() - 1, acquired.transitions().size());
+        // the other transitions are unchanged: deaths from every compartment, infections per class
+        assertArrayEquals(inherited.derivatives(0, y), plusBirthShift(acquired.derivatives(0, y), acquired, 0.01 * 35), 1e-12);
+        SemanticException ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(sir + String.format(age, "entry: #(newborn);") + rest)));
+        assertTrue(ex.getMessage().contains("entry value newborn is not a value of age"), ex.getMessage());
+        ex = assertThrows(SemanticException.class, () -> ModelBuilder.build(KendrickParserFacade.parse(
+                "KModel A entry: #(x); parameters: #(p).\nComposition C model: 'A'.\nScenario Sc on: 'C'; p: 1.\n")));
+        assertTrue(ex.getMessage().contains("entry without attribute"), ex.getMessage());
+    }
+
+    /** The derivatives of the inherited model equal those of the acquired one, except that the old receive their own births. */
+    private static double[] plusBirthShift(double[] dy, GroundModel g, double oldBirths) {
+        double[] r = dy.clone();
+        r[g.model.indexOf(compartment("status", "S", "age", "young"))] -= oldBirths;
+        r[g.model.indexOf(compartment("status", "S", "age", "old"))] += oldBirths;
+        return r;
     }
 
     @Test

@@ -79,6 +79,16 @@ public final class GroundModel {
         return new Context(this, t, state, current, owner, new HashMap<>());
     }
 
+    /**
+     * The context of a transition's rate: at its source, or at its target for an inflow, where the
+     * attributes with an entry value are left free in the cardinalities (the newcomers are born
+     * from the whole population, not from the entry compartments only).
+     */
+    public Context context(double t, double[] state, ComposedModel.Transition tr) {
+        if (!tr.isBirth()) return context(t, state, tr.from, tr.concern);
+        return new Context(this, t, state, tr.to, tr.concern, new HashMap<>(), model.entryAttributes(tr.concern.attribute.name));
+    }
+
     /** Value of a parameter at a compartment (declared indices resolved from the compartment). */
     public double parameter(String name, Compartment c, double t, double[] state) {
         ParameterValue v = parameters.get(name);
@@ -92,7 +102,7 @@ public final class GroundModel {
      * the compiled rates ({@link #propensity(int, double, double[])}).
      */
     public double rate(ComposedModel.Transition tr, double t, double[] state) {
-        return Evaluator.eval(tr.local.rate, context(t, state, tr.site(), tr.concern));
+        return Evaluator.eval(tr.local.rate, context(t, state, tr));
     }
 
     /** Propensity of a transition: rate times the source cardinality, or the rate itself for a birth. */
@@ -129,7 +139,7 @@ public final class GroundModel {
         for (int i = 0; i < rates.length; i++) {
             ComposedModel.Transition tr = transitions.get(i);
             RateCompiler.Reads reads = new RateCompiler.Reads();
-            rates[i] = RateCompiler.compile(tr.local.rate, context(0, null, tr.site(), tr.concern), reads);
+            rates[i] = RateCompiler.compile(tr.local.rate, context(0, null, tr), reads);
             from[i] = tr.from == null ? -1 : model.indexOf(tr.from);
             to[i] = tr.to == null ? -1 : model.indexOf(tr.to);
             if (from[i] >= 0) reads.state.add(from[i]); // the propensity is rate x source cardinality

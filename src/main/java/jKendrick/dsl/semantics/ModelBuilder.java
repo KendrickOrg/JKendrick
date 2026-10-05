@@ -140,9 +140,12 @@ public final class ModelBuilder {
     }
 
     private static Concern concern(Ast.KModel k) {
-        Attribute attribute = k.attribute == null ? null : new Attribute(k.attribute.name, k.attribute.values);
-        Set<String> values = attribute == null ? Collections.emptySet() : new HashSet<>(attribute.values);
         String where = "KModel " + k.name;
+        if (k.entry != null && k.attribute == null) throw new SemanticException(where + ": entry without attribute").at(k);
+        if (k.entry != null && !k.attribute.values.contains(k.entry))
+            throw new SemanticException(where + ": entry value " + k.entry + " is not a value of " + k.attribute.name).at(k);
+        Attribute attribute = k.attribute == null ? null : new Attribute(k.attribute.name, k.attribute.values, k.entry);
+        Set<String> values = attribute == null ? Collections.emptySet() : new HashSet<>(attribute.values);
 
         Map<String, Ast.Expr> equations = new LinkedHashMap<>();
         for (Ast.Equation e : k.equations) {

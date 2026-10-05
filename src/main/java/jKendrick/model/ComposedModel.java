@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The composition of concerns by the tensor sum.
@@ -120,7 +121,7 @@ public final class ComposedModel {
                 String a = k.attribute.name;
                 for (Compartment c : compartments) {
                     if (t.isBirth()) {
-                        if (t.to.equals(c.get(a))) result.add(new Transition(k, t, null, c));
+                        if (t.to.equals(c.get(a)) && isEntry(c, a)) result.add(new Transition(k, t, null, c));
                     } else if (t.from.equals(c.get(a))) {
                         result.add(new Transition(k, t, c, t.isDeath() ? null : c.with(a, t.to)));
                     }
@@ -128,6 +129,24 @@ public final class ComposedModel {
             }
         }
         return result;
+    }
+
+    /**
+     * Whether {@code c} may receive an inflow of the concern owning attribute {@code own}: for
+     * every other attribute with an entry value, {@code c} has that value. Attributes without an
+     * entry value are inherited and the inflow is replicated over their values.
+     */
+    boolean isEntry(Compartment c, String own) {
+        for (Attribute b : attributes)
+            if (!b.name.equals(own) && b.entry != null && !b.entry.equals(c.get(b.name))) return false;
+        return true;
+    }
+
+    /** The names of the attributes with an entry value, other than {@code own}. */
+    public Set<String> entryAttributes(String own) {
+        Set<String> names = new java.util.LinkedHashSet<>();
+        for (Attribute b : attributes) if (!b.name.equals(own) && b.entry != null) names.add(b.name);
+        return names;
     }
 
     /**

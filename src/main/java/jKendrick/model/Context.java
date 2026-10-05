@@ -2,7 +2,9 @@ package jKendrick.model;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Where an expression is evaluated: the ground model and its current state, the compartment
@@ -26,27 +28,38 @@ public final class Context {
     public final Compartment current;
     public final Concern owner;
     public final Map<String, String> env;
+    /**
+     * Attributes left free (summed over) when an unindexed cardinality name is localised to
+     * {@code current}: for an inflow, the attributes with an entry value, so that {@code N} in a
+     * birth rate is the whole population the newcomers are born from, whatever their entry value.
+     */
+    public final Set<String> free;
 
     public Context(GroundModel ground, double t, double[] state, Compartment current, Concern owner, Map<String, String> env) {
+        this(ground, t, state, current, owner, env, Collections.emptySet());
+    }
+
+    public Context(GroundModel ground, double t, double[] state, Compartment current, Concern owner, Map<String, String> env, Set<String> free) {
         this.ground = ground;
         this.t = t;
         this.state = state;
         this.current = current;
         this.owner = owner;
         this.env = Collections.unmodifiableMap(new HashMap<>(env));
+        this.free = Collections.unmodifiableSet(new HashSet<>(free));
     }
 
     public Context bind(String variable, String value) {
         Map<String, String> e = new HashMap<>(env);
         e.put(variable, value);
-        return new Context(ground, t, state, current, owner, e);
+        return new Context(ground, t, state, current, owner, e, free);
     }
 
     public Context withOwner(Concern newOwner) {
-        return new Context(ground, t, state, current, newOwner, env);
+        return new Context(ground, t, state, current, newOwner, env, free);
     }
 
     public Context withEnv(Map<String, String> newEnv) {
-        return new Context(ground, t, state, current, owner, newEnv);
+        return new Context(ground, t, state, current, owner, newEnv, free);
     }
 }

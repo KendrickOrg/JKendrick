@@ -42,6 +42,7 @@ modelClause
     | 'transitions:' '#(' transition ('.' transition)* '.'? ')'           # transitionsClause
     | 'connectionMatrix:' '#(' row+ ')'                                   # connectionMatrixClause
     | 'topology:' '#(' kind=ID direction=ID? ')'                          # topologyClause
+    | 'entry:' '#(' entryValue=(ID | NUMBER) ')'                           # entryClause
     | 'transitionRate:' '#(' expr ')'                                     # transitionRateClause
     | KEYWORD '#(' expr ')'                                               # parameterFormulaClause
     ;

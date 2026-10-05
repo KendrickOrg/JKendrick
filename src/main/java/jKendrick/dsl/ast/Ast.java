@@ -75,10 +75,12 @@ public final class Ast {
         public final Topology topology;
         /** Rate of {@code transitionRate:}, or null. */
         public final Expr transitionRate;
+        /** Value of {@code entry:}, taken by individuals entering the population (births, immigration), or null. */
+        public final String entry;
 
         public KModel(String name, Attribute attribute, List<String> parameters,
                       Map<String, Expr> parameterFormulas, List<Equation> equations,
-                      List<Transition> transitions, double[][] connectionMatrix, Topology topology, Expr transitionRate) {
+                      List<Transition> transitions, double[][] connectionMatrix, Topology topology, Expr transitionRate, String entry) {
             super(name);
             this.attribute = attribute;
             this.parameters = Collections.unmodifiableList(parameters);
@@ -87,6 +89,7 @@ public final class Ast {
             this.transitions = Collections.unmodifiableList(transitions);
             this.connectionMatrix = connectionMatrix;
             this.topology = topology;
+            this.entry = entry;
             this.transitionRate = transitionRate;
         }
     }

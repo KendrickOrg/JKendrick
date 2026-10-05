@@ -19,6 +19,7 @@ KModel MetaPopulation
 
 KModel Isolation
     attribute: #(isolation in (free isolated));
+    entry: #(free);
     parameters: #(delta epsilon);
     transitions: #(
         free -- delta --> isolated.

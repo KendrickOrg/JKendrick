@@ -13,10 +13,20 @@ import java.util.List;
 public final class Attribute {
     public final String name;
     public final List<String> values;
+    /**
+     * The value taken by individuals entering the population (births, immigration), or null when
+     * the attribute is inherited: an inflow is then replicated over all the values.
+     */
+    public final String entry;
 
     public Attribute(String name, List<String> values) {
+        this(name, values, null);
+    }
+
+    public Attribute(String name, List<String> values, String entry) {
         this.name = name;
         this.values = Collections.unmodifiableList(values);
+        this.entry = entry;
     }
 
     public int indexOf(String value) {
