@@ -26,6 +26,7 @@ automatically) or stochastically (Gillespie, tau-leap on the composed continuous
 - [How it works](#how-it-works)
 - [Tests](#tests)
 - [Publications](#publications)
+- [Acknowledgments](#acknowledgments)
 
 ## Installation
 
@@ -325,3 +326,11 @@ the series extraction of `Visualization` (`VisualizationSpecTest`).
 
 See [Mikal Ziane's web page](https://perso.lip6.fr/Mikal.Ziane/). The Kendrick project (Pharo
 implementation, wiki) is at https://github.com/KendrickOrg/kendrick.
+
+## Acknowledgments
+
+Earlier versions of JKendrick (2024-2025, alpha and pre-alpha) were implemented with the help of
+students of Université Paris Cité: Williem, Sophie, Yvan and Alya
+<!-- TODO: full names, with their agreement -->. The present version was written with the
+assistance of Claude (Anthropic), under the direction of the authors, who checked and tested every
+generated program.
