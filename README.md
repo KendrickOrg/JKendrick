@@ -24,6 +24,7 @@ automatically) or stochastically (Gillespie, tau-leap on the composed continuous
   - [Simulation and Visualization](#simulation-and-visualization)
   - [Errors](#errors)
 - [How it works](#how-it-works)
+  - [Relation to stochastic automata networks](#relation-to-stochastic-automata-networks)
 - [Tests](#tests)
 - [Publications](#publications)
 - [Acknowledgments](#acknowledgments)
@@ -310,6 +311,21 @@ The pipeline is script -> AST -> meta-model objects -> trajectories, one package
 
 Model 3 of the paper (3 concerns, 120 compartments, 390 transitions, 825 000 individuals) runs 1500
 days of Gillespie in about a minute and a half and of RK4 in a few tenths of a second.
+
+### Relation to stochastic automata networks
+
+In the terms of Plateau's stochastic automata networks (SANs), a `Concern.LocalTransition` is a *local
+event descriptor*: a transition of one automaton whose rate may be a function of the state of the
+others (a functional rate), and `ComposedModel` is the *local part* of the SAN descriptor, the tensor
+sum of the concerns' generators. The automata are the individuals, whose state is their tuple of
+attribute values; the state JKendrick integrates is the vector of counts, i.e. the lumped chain of N
+identical individuals, which is what makes populations of 10^5 tractable. What the language does not
+have yet are *synchronizing events*, by which one event changes two attributes of an individual at once
+(hospitalisation at symptom onset: status and location; isolation on a positive test; a birth directly
+into the infectious state). Such an event belongs to two concerns, so it cannot be written in either
+without coupling them; the planned place for it is the `Composition`, next to the functional rates of
+the `Scenario`, the only other place where concerns meet, and the composed generator then becomes the
+full SAN descriptor (tensor sum plus Plateau's synchronizing terms).
 
 ## Tests
 
