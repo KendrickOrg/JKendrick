@@ -330,7 +330,7 @@ implementation, wiki) is at https://github.com/KendrickOrg/kendrick.
 ## Acknowledgments
 
 Earlier versions of JKendrick (2024-2025, alpha and pre-alpha) were implemented with the help of
-students of Université Paris Cité: Williem, Sophie, Yvan and Alya
-<!-- TODO: full names, with their agreement -->. The present version was written with the
+students of Université Paris Cité: Alya Ayinde, Willien Hu, Sophie and Yvan
+<!-- TODO: full names of Sophie and Yvan, with their agreement -->. The present version was written with the
 assistance of Claude (Anthropic), under the direction of the authors, who checked and tested every
 generated program.
