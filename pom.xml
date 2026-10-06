@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>fr.lip6</groupId>
-    <artifactId>JKendrick2</artifactId>
+    <artifactId>JKendrick</artifactId>
     <version>0.1-SNAPSHOT</version>
 
     <properties>
@@ -42,8 +42,8 @@
                     <target>14</target>
                 </configuration>
             </plugin>
-            <!-- Builds target/jkendrick2.jar, a self-contained jar (XChart and the ANTLR runtime included)
-                 whose main class is the graphical front end: java -jar target/jkendrick2.jar [script]. -->
+            <!-- Builds target/jkendrick.jar, a self-contained jar (XChart and the ANTLR runtime included)
+                 whose main class is the graphical front end: java -jar target/jkendrick.jar [script]. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -55,7 +55,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>jkendrick2</finalName>
+                            <finalName>jkendrick</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

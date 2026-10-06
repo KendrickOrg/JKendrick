@@ -1,6 +1,6 @@
-# JKendrick2
+# JKendrick
 
-JKendrick2 is a Java implementation of [Kendrick](https://github.com/KendrickOrg/kendrick/wiki), a
+JKendrick is a Java implementation of [Kendrick](https://github.com/KendrickOrg/kendrick/wiki), a
 domain-specific language for epidemiological modeling in which a model is composed from independent
 *concerns* (the disease dynamics, the host species, the spatial structure, a control policy...). It is
 the reference implementation of the *new* Kendrick syntax used by the paper "A Formal Approach to
@@ -16,7 +16,7 @@ automatically) or stochastically (Gillespie, tau-leap on the composed continuous
   - [Writing a model](#writing-a-model)
   - [Running a script from the command line](#running-a-script-from-the-command-line)
   - [KendrickStudio, the graphical front end](#kendrickstudio-the-graphical-front-end)
-  - [Using JKendrick2 from Java](#using-jkendrick2-from-java)
+  - [Using JKendrick from Java](#using-jkendrick-from-java)
 - [The language](#the-language)
   - [Key concepts](#key-concepts)
   - [Grammar](#grammar)
@@ -33,16 +33,16 @@ automatically) or stochastically (Gillespie, tau-leap on the composed continuous
 Requirements: a JDK 14 or later (17 recommended) and Apache Maven 3.6 or later. Check with
 `java -version` and `mvn -version`.
 
-    git clone https://github.com/KendrickOrg/JKendrick2.git
-    cd JKendrick2
+    git clone https://github.com/KendrickOrg/JKendrick.git
+    cd JKendrick
     mvn package
 
 `mvn package` generates the parser from the grammar (`antlr4-maven-plugin`), compiles, runs the tests
 and produces two jars in `target/`:
 
-- `jkendrick2.jar`: a self-contained ("fat") jar including XChart and the ANTLR runtime, whose main
-  class is the graphical front end; `java -jar target/jkendrick2.jar` is all that is needed to use it;
-- `JKendrick2-0.1-SNAPSHOT.jar`: the classes alone, for use as a library with Maven.
+- `jkendrick.jar`: a self-contained ("fat") jar including XChart and the ANTLR runtime, whose main
+  class is the graphical front end; `java -jar target/jkendrick.jar` is all that is needed to use it;
+- `JKendrick-0.1-SNAPSHOT.jar`: the classes alone, for use as a library with Maven.
 
 `mvn package -DskipTests` skips the tests (about ten seconds). In IntelliJ IDEA or Eclipse, open the
 project as a Maven project: the generated parser (`target/generated-sources/antlr4`, package
@@ -116,7 +116,7 @@ paper; `kendrick models/SYNTAX.md` in the paper repository is the language refer
 
 ### Running a script from the command line
 
-    java -cp target/jkendrick2.jar jKendrick.Kendrick model.kendrick [--csv out.csv] [--png out.png] [--show]
+    java -cp target/jkendrick.jar jKendrick.Kendrick model.kendrick [--csv out.csv] [--png out.png] [--show]
 
 runs the script's `Simulation` entity and prints the model's size and the totals per status (and
 species) at the end of the run:
@@ -135,7 +135,7 @@ curve per status.
 
 ### KendrickStudio, the graphical front end
 
-    java -jar target/jkendrick2.jar [model.kendrick]
+    java -jar target/jkendrick.jar [model.kendrick]
 
 opens KendrickStudio: a script editor on the left, the chart of the script's `Visualization` entity
 on the right, a log below. *Open...* loads a script, *Run* (or Ctrl+Enter) runs it in the background
@@ -143,7 +143,7 @@ and shows the chart and the totals; errors are logged with their line and column
 moved to the first one. On the chart, drag a rectangle to zoom on a time interval and double-click
 (or use the *Reset Zoom* button) to see the whole run again; `--show` on the command line opens the same chart. *Save* and *Save as...* write the script, *Save chart as PNG...* the chart.
 
-### Using JKendrick2 from Java
+### Using JKendrick from Java
 
     import jKendrick.Kendrick;
     import jKendrick.model.GroundModel;
@@ -161,8 +161,8 @@ moved to the first one. On the chart, drag a rectangle to zoom on a time interva
     XYChart chart = ChartRenderer.chart(Kendrick.visualizations(model).get(0), ssa);  // XChart
     ChartRenderer.savePng(chart, Paths.get("ssa.png"));
 
-The library jar is `target/JKendrick2-0.1-SNAPSHOT.jar`; `mvn install` puts it in the local Maven
-repository as `fr.lip6:JKendrick2:0.1-SNAPSHOT`.
+The library jar is `target/JKendrick-0.1-SNAPSHOT.jar`; `mvn install` puts it in the local Maven
+repository as `fr.lip6:JKendrick:0.1-SNAPSHOT`.
 
 ## The language
 
@@ -329,7 +329,8 @@ implementation, wiki) is at https://github.com/KendrickOrg/kendrick.
 
 ## Acknowledgments
 
-Earlier versions of JKendrick (2024-2025, alpha and pre-alpha) were implemented with the help of
+Earlier versions of JKendrick (2022-2025, alpha and pre-alpha; the 2022-2023 prototype is kept at
+https://github.com/KendrickOrg/JKendrick-prototype-2023) were implemented with the help of
 students of our group: Alya Ayinde, Sophie Depierre, A Yvan Guifo Fodjo and Willien Hu. The present version was written with the
 assistance of Claude (Anthropic), under the direction of the authors, who checked and tested every
 generated program.
