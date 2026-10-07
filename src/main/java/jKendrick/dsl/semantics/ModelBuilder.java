@@ -277,7 +277,40 @@ public final class ModelBuilder {
                     throw e.at(a);
                 }
             }
+            checkFormulaCycles();
             return new GroundModel(sc.name, model, parameters, variables, state, simulation, visualizations);
+        }
+
+        /**
+         * A parameter formula must not depend on itself, directly or through other formulas (the
+         * default formulas of the concerns included), or its evaluation would not terminate.
+         */
+        private void checkFormulaCycles() {
+            Map<String, List<String>> deps = new LinkedHashMap<>();
+            for (Map.Entry<String, ParameterValue> e : parameters.entrySet()) {
+                if (!(e.getValue() instanceof ParameterValue.Formula)) continue;
+                List<String> d = new ArrayList<>();
+                for (Ast.Indexed n : names(((ParameterValue.Formula) e.getValue()).expr))
+                    if (parameters.get(n.base) instanceof ParameterValue.Formula && !d.contains(n.base)) d.add(n.base);
+                deps.put(e.getKey(), d);
+            }
+            Set<String> done = new HashSet<>();
+            for (String p : deps.keySet()) visit(p, deps, new ArrayList<>(), done);
+        }
+
+        private void visit(String p, Map<String, List<String>> deps, List<String> path, Set<String> done) {
+            if (done.contains(p)) return;
+            int i = path.indexOf(p);
+            if (i >= 0) {
+                List<String> cycle = new ArrayList<>(path.subList(i, path.size()));
+                cycle.add(p);
+                throw new SemanticException(where + ": the formulas of " + String.join(", ", path.subList(i, path.size()))
+                        + " depend on each other (" + String.join(" -> ", cycle) + ")");
+            }
+            path.add(p);
+            for (String q : deps.get(p)) visit(q, deps, path, done);
+            path.remove(path.size() - 1);
+            done.add(p);
         }
 
         private void assign(Ast.Assignment a) {
