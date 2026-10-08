@@ -47,7 +47,12 @@ public final class ComposedModel {
                     attributeByValue.put(v, c.attribute);
                 }
             }
-            for (String p : c.parameters) concernByParameter.putIfAbsent(p, c);
+            for (String p : c.parameters) {
+                Concern other = concernByParameter.putIfAbsent(p, c);
+                if (other != null)
+                    throw new IllegalArgumentException("parameter " + p + " is declared by both " + other.name + " and " + c.name
+                            + ": a parameter belongs to one concern; bind the two to the same value in the scenario");
+            }
         }
         this.attributes = Collections.unmodifiableList(attrs);
         List<Compartment> comps = new ArrayList<>();
