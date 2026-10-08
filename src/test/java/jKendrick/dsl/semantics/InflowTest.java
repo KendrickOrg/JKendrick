@@ -1,0 +1,92 @@
+package jKendrick.dsl.semantics;
+
+import jKendrick.dsl.parser.KendrickParserFacade;
+import jKendrick.model.GroundModel;
+import org.junit.jupiter.api.Test;
+
+import static jKendrick.dsl.semantics.ModelBuilderTest.compartment;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * The placement of inflows by the composition (Definition 4 of the paper, Appendix B.3), checked on the
+ * derivatives at the initial state with unequal populations and heterogeneous inflows:
+ * an inherited attribute replicates an inflow over its values, each localised to its own population;
+ * an acquired attribute sends the whole inflow to its entry value, at a rate evaluated with the
+ * attribute summed out.
+ */
+class InflowTest {
+
+    private static final String SI = String.join("\n",
+            "KModel SI",
+            "    attribute: #(status in (S I));",
+            "    parameters: #(beta mu iota);",
+            "    transitions: #(",
+            "        S -- beta*I/N --> I.",
+            "        Empty -- mu*N --> S.",
+            "        Empty -- iota --> S.",
+            "        status -- mu --> Empty).");
+
+    private static GroundModel build(String tail) {
+        String script = SI + "\n" + tail + "\nSimulation Sim solver: 'rungeKutta'; scenario: 'Scr'; from: 0; to: 1; step: 1.";
+        return ModelBuilder.build(KendrickParserFacade.parse(script, "inflow.kendrick"));
+    }
+
+    private static double derivative(GroundModel g, String... compartment) {
+        double[] d = g.derivatives(0, g.initialState());
+        return d[g.model.indexOf(compartment(compartment))];
+    }
+
+    @Test
+    void anImmigrationRateIndexedByAnInheritedAttributeEntersEachValueAtItsOwnRate() {
+        GroundModel g = build(String.join("\n",
+                "KModel Zone attribute: #(zone in (1 2)).",
+                "Composition M model: 'SI'; model: 'Zone'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0; iota_zone: #(10 0); S_zone: #(100 50); I: 0."));
+        // no infection (I = 0) and no births or deaths (mu = 0): dS/dt is the immigration alone
+        assertEquals(10.0, derivative(g, "status", "S", "zone", "1"), 1e-12);
+        assertEquals(0.0, derivative(g, "status", "S", "zone", "2"), 1e-12);
+    }
+
+    @Test
+    void birthsAreReplicatedOverAnInheritedAttributeInProportionToEachPopulation() {
+        GroundModel g = build(String.join("\n",
+                "KModel Zone attribute: #(zone in (1 2)).",
+                "Composition M model: 'SI'; model: 'Zone'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_zone: #(100 50); I: 0."));
+        // zone 1: births mu*N_1 = 10, deaths mu*S_1 = 10; zone 2: 5 and 5. N is the local population.
+        assertEquals(10.0 - 10.0, derivative(g, "status", "S", "zone", "1"), 1e-12);
+        assertEquals(5.0 - 5.0, derivative(g, "status", "S", "zone", "2"), 1e-12);
+        assertEquals(150.0, total(g), 1e-12);
+    }
+
+    @Test
+    void birthsEnterTheEntryValueOfAnAcquiredAttributeAtTheRateOfTheWholePopulation() {
+        GroundModel g = build(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated));",
+                "    entry: #(free).",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_isolation: #(100 50); I: 0."));
+        // all births (mu * (100 + 50) = 15) enter S_free; deaths are local: 10 among the free, 5 among the isolated
+        assertEquals(15.0 - 10.0, derivative(g, "status", "S", "isolation", "free"), 1e-12);
+        assertEquals(0.0 - 5.0, derivative(g, "status", "S", "isolation", "isolated"), 1e-12);
+    }
+
+    @Test
+    void withoutAnEntryValueTheIsolatedWouldGetBirthsOfTheirOwn() {
+        GroundModel g = build(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated)).",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_isolation: #(100 50); I: 0."));
+        // the attribute is then inherited: the isolated population breeds isolated newborns, the error of Model 4
+        assertEquals(10.0 - 10.0, derivative(g, "status", "S", "isolation", "free"), 1e-12);
+        assertEquals(5.0 - 5.0, derivative(g, "status", "S", "isolation", "isolated"), 1e-12);
+    }
+
+    private static double total(GroundModel g) {
+        double t = 0;
+        for (double v : g.initialState()) t += v;
+        return t;
+    }
+}
