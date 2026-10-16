@@ -31,7 +31,7 @@ automatically) or stochastically (Gillespie, tau-leap on the composed continuous
 
 ## Installation
 
-Requirements: a JDK 14 or later (17 recommended) and Apache Maven 3.6 or later. Check with
+Requirements: a JDK 23 or later and Apache Maven 3.6 or later. Check with
 `java -version` and `mvn -version`.
 
     git clone https://github.com/KendrickOrg/JKendrick.git
