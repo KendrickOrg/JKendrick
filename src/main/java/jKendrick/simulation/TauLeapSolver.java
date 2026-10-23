@@ -8,8 +8,11 @@ import java.util.Random;
 
 /**
  * Tau-leaping with a fixed leap equal to the recording step divided by {@code substeps}: in each
- * leap every transition fires a Poisson number of times with mean propensity * tau. A compartment
- * cannot go negative: firings beyond its cardinality are dropped.
+ * leap every transition fires a Poisson number of times with mean propensity * tau, the
+ * propensities being those at the start of the leap (a rate that reads the time is thus held
+ * constant within a leap, an error of the order of the leap's own). A compartment cannot go
+ * negative: the transitions are taken in order and the firings of each beyond what its source
+ * compartment still holds are dropped, so the population is conserved.
  */
 public final class TauLeapSolver extends StochasticSolver {
     private final int substeps;
@@ -29,22 +32,29 @@ public final class TauLeapSolver extends StochasticSolver {
         double[] times = Solver.grid(from, to, step);
         List<ComposedModel.Transition> transitions = g.transitions();
         double[] y = g.initialState();
-        for (int i = 0; i < y.length; i++) y[i] = Math.round(y[i]);
         double[][] states = new double[times.length][];
         states[0] = y.clone();
         double tau = step / substeps;
         double[] a = new double[transitions.size()];
+        double[] left = new double[y.length]; // what each compartment still holds for the leap's departures
         double[] delta = new double[y.length];
         for (int i = 1; i < times.length; i++) {
             double t = times[i - 1];
             for (int s = 0; s < substeps; s++) {
                 propensities(g, t, y, a);
+                System.arraycopy(y, 0, left, 0, y.length);
                 java.util.Arrays.fill(delta, 0);
                 for (int k = 0; k < a.length; k++) {
                     if (a[k] <= 0) continue;
-                    fire(g, k, delta, poisson(a[k] * tau, random));
+                    int firings = poisson(a[k] * tau, random);
+                    int src = g.source(k);
+                    if (src >= 0) {
+                        firings = (int) Math.min(firings, left[src]);
+                        left[src] -= firings;
+                    }
+                    fire(g, k, delta, firings);
                 }
-                for (int j = 0; j < y.length; j++) y[j] = Math.max(0, y[j] + delta[j]);
+                for (int j = 0; j < y.length; j++) y[j] += delta[j];
                 t += tau;
             }
             states[i] = y.clone();

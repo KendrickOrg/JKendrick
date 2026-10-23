@@ -7,7 +7,8 @@ the reference implementation of the *new* Kendrick syntax used by the paper "A F
 Separation of Concerns in Epidemiology Modeling": a script is parsed, given its meaning by building
 the objects of the mathematical meta-model (concerns as automata, their tensor-sum composition, the
 ground model of a scenario), and run deterministically (RK4 on the composed ODE system, produced
-automatically) or stochastically (Gillespie, tau-leap on the composed continuous-time Markov chain).
+automatically) or stochastically (Gillespie's direct method, Anderson's next reaction method when a rate reads the
+time, tau-leap, on the composed continuous-time Markov chain).
 
 ## Contents
 
@@ -43,7 +44,7 @@ and produces two jars in `target/`:
 
 - `jkendrick.jar`: a self-contained ("fat") jar including XChart and the ANTLR runtime, whose main
   class is the graphical front end; `java -jar target/jkendrick.jar` is all that is needed to use it;
-- `JKendrick-0.1-SNAPSHOT.jar`: the classes alone, for use as a library with Maven.
+- `JKendrick-0.2-SNAPSHOT.jar`: the classes alone, for use as a library with Maven.
 
 `mvn package -DskipTests` skips the tests (about ten seconds). In IntelliJ IDEA or Eclipse, open the
 project as a Maven project: the generated parser (`target/generated-sources/antlr4`, package
@@ -159,11 +160,12 @@ moved to the first one. On the chart, drag a rectangle to zoom on a time interva
     // or choose the solver yourself
     Trajectory ode = new RungeKuttaSolver(4).solve(model, 0, 1500, 1).get(0);         // 4 substeps per step
     List<Trajectory> ssa = new GillespieSolver(20, 7L).solve(model, 0, 1500, 1);       // 20 runs, seed 7
+    List<Trajectory> nrm = new NextReactionSolver(20, 7L).solve(model, 0, 1500, 1);    // same, exact when a rate reads t
     XYChart chart = ChartRenderer.chart(Kendrick.visualizations(model).get(0), ssa);  // XChart
     ChartRenderer.savePng(chart, Paths.get("ssa.png"));
 
-The library jar is `target/JKendrick-0.1-SNAPSHOT.jar`; `mvn install` puts it in the local Maven
-repository as `fr.lip6:JKendrick:0.1-SNAPSHOT`.
+The library jar is `target/JKendrick-0.2-SNAPSHOT.jar`; `mvn install` puts it in the local Maven
+repository as `fr.lip6:JKendrick:0.2-SNAPSHOT`.
 
 ## The language
 
@@ -181,8 +183,9 @@ concerns replicated over the other concerns' states, and its rates may depend on
 
 A ***scenario*** is a ground model: a model whose parameters and initial cardinalities have all
 been given a value, so that it can be run by a ***solver*** in a ***simulation*** for a given
-duration and time step. Since the models are CTMCs they can be run with Gillespie's algorithm or the
-faster tau-leap; their ODEs (the mean-field limit) can also be solved numerically, with RK4.
+duration and time step. Since the models are CTMCs they can be run with Gillespie's algorithm (or
+Anderson's next reaction method when a rate reads the time) or the faster tau-leap; their ODEs (the
+mean-field limit) can also be solved numerically, with RK4.
 
 ### Grammar
 
@@ -258,14 +261,32 @@ of Model 4 would create susceptible birds born isolated, and isolated for life.
 
 ### Simulation and Visualization
 
-`Simulation` takes `solver:` (`'rungeKutta'`, `'gillespie'` or `'tauLeap'`), `from:`, `to:`, `step:`
-(the times at which the state is recorded), for the stochastic solvers `runs:` and `seed:`, and
-`substeps:` (RK4 sub-steps per step, or tau-leap leaps per step). The stochastic solvers need every
+`Simulation` takes `solver:` (`'rungeKutta'`, `'gillespie'`, `'nextReaction'` or `'tauLeap'`), `from:`,
+`to:`, `step:` (the times at which the state is recorded), for the stochastic solvers `runs:` and
+`seed:`, `substeps:` (RK4 sub-steps per step, or tau-leap leaps per step) and `panels:` (next reaction
+only: Simpson panels per step for the rates that read the time, default 8). The stochastic solvers need every
 concern's dynamics as transitions: a concern given by ODEs provides them when every term of its
 equations is a flow proportional to its source compartment (`-lambda*S` in `S` matched by `+lambda*S`
 in `E` is `S -- lambda --> E`; an unmatched `-mu*S` is a death, an unmatched `+mu*N` a birth), which
 are the hypotheses under which a deterministic model reads as a CTMC; other equations keep their ODE
 reading and the stochastic solvers say so.
+
+`gillespie` is the direct method: the propensities are held constant between two events, which is
+exact when no rate reads `t`. A model with a rate that reads `t` is refused by it and directed to
+`nextReaction`, Anderson's modified next reaction method (J. Chem. Phys. 127, 214107, 2007), which
+drives every transition by its own unit-rate Poisson process and integrates its propensity between
+events (Simpson's rule on panels of `step / panels`), so that a seasonal forcing such as
+`beta*(1+cos(t))` is simulated exactly; on rates that do not read `t` the two methods give the same
+law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
+what its source compartment holds, so that the population is conserved.
+
+What the stochastic solvers check: the initial state must be a vector of nonnegative integers (an
+unindexed initial cardinality spread evenly over compartments may give fractions: index it), and a
+run stops with an error naming the transition and the time when a propensity is negative, infinite
+or undefined (a rate is evaluated only where its source compartment is nonempty, so a quotient by an
+empty sub-population is not an error until an individual is there to move). They do not bound the
+number of events, which is finite when the inflow rates grow at most linearly with the population.
+The deterministic solver checks none of this and propagates such values into the trajectory.
 
 `Visualization` takes `plot: 'diagram'` (series against time, the only kind for now), `for:` (a
 Simulation), `data:` (`#(I_species)`: one series per species, the infectious summed over the other
@@ -303,14 +324,15 @@ The pipeline is script -> AST -> meta-model objects -> trajectories, one package
   reads. `GroundModel` exposes the compiled propensities, the dependency lists and `derivatives(t, y)`,
   the right-hand side of the composed ODE system.
 - `jKendrick.simulation` holds the solvers (`RungeKuttaSolver`, `GillespieSolver` with incremental
-  propensity updates, `TauLeapSolver`), `Trajectory` (times x compartments, `aggregate(...)`, `toCsv()`),
+  propensity updates, `NextReactionSolver` with `Quadrature`, `TauLeapSolver`), `Trajectory` (times x compartments, `aggregate(...)`, `toCsv()`),
   `SimulationRunner` (reads the `Simulation` entity), `VisualizationSpec` (reads a `Visualization`
   entity and extracts the series of a trajectory) and `ChartRenderer`, the only class depending on XChart.
 - `jKendrick.Kendrick` is the command-line entry point and the API (`load`, `build`, `run`,
   `visualizations`); `jKendrick.ui.KendrickStudio` the Swing front end.
 
 Model 3 of the paper (3 concerns, 120 compartments, 390 transitions, 825 000 individuals) runs 1500
-days of Gillespie in about a minute and a half and of RK4 in a few tenths of a second.
+days of Gillespie or of the next reaction method in about a minute (61 and 67 s on a laptop) and of RK4 in a
+few tenths of a second.
 
 ### Relation to stochastic automata networks
 
@@ -335,8 +357,13 @@ with the interpreter and the completeness of the dependency lists (`RateCompiler
 ODE systems against the hand-written MATLAB versions of the paper at 1500 days
 (`GroundModelSimulationTest`; the MATLAB scripts are in the paper repository, `matlab models/M1..M4`,
 and were run with Octave), the solvers (`SolversTest`: Gillespie runs are integer, conservative and
-close to the ODE on average, tau-leap close to Gillespie, flow-form equations run stochastically) and
-the series extraction of `Visualization` (`VisualizationSpecTest`).
+close to the ODE on average, tau-leap close to Gillespie, flow-form equations run stochastically;
+`NextReactionSolverTest`: the next reaction solver on pure death processes with a constant, a linear,
+an oscillating and a delayed hazard, whose survival is known exactly, the ensemble mean of 200 runs
+within three standard errors of it and the variance too, and against Gillespie on a constant rate;
+`AdmissibilityTest`: a negative or undefined rate stops the run, a fractional initial state is
+refused, tau-leaping conserves the population when a leap overshoots) and the series extraction of
+`Visualization` (`VisualizationSpecTest`).
 
 ## Publications
 

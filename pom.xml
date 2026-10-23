@@ -5,7 +5,7 @@
 
     <groupId>fr.lip6</groupId>
     <artifactId>JKendrick</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.release>23</maven.compiler.release>
