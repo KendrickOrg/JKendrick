@@ -1,11 +1,14 @@
 package jKendrick.dsl.semantics;
 
 import jKendrick.dsl.parser.KendrickParserFacade;
+import jKendrick.dsl.semantics.SemanticException;
 import jKendrick.model.GroundModel;
 import org.junit.jupiter.api.Test;
 
 import static jKendrick.dsl.semantics.ModelBuilderTest.compartment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The placement of inflows by the composition (Definition 4 of the paper, Appendix B.3), checked on the
@@ -70,6 +73,7 @@ class InflowTest {
         // all births (mu * (100 + 50) = 15) enter S_free; deaths are local: 10 among the free, 5 among the isolated
         assertEquals(15.0 - 10.0, derivative(g, "status", "S", "isolation", "free"), 1e-12);
         assertEquals(0.0 - 5.0, derivative(g, "status", "S", "isolation", "isolated"), 1e-12);
+        assertTrue(g.model.warnings.isEmpty(), g.model.warnings.toString());
     }
 
     @Test
@@ -82,6 +86,46 @@ class InflowTest {
         // the attribute is then inherited: the isolated population breeds isolated newborns, the error of Model 4
         assertEquals(10.0 - 10.0, derivative(g, "status", "S", "isolation", "free"), 1e-12);
         assertEquals(5.0 - 5.0, derivative(g, "status", "S", "isolation", "isolated"), 1e-12);
+        assertEquals(1, g.model.warnings.size(), g.model.warnings.toString());
+        assertTrue(g.model.warnings.get(0).contains("isolation") && g.model.warnings.get(0).contains("Isolation"),
+                g.model.warnings.get(0));
+    }
+
+    @Test
+    void anInheritedDeclarationKeepsTheInheritedDefaultAndGivesNoWarning() {
+        // the same concern, declared inherited on purpose: the default is intended, so no warning
+        GroundModel g = build(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated)); inherited.",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_isolation: #(100 50); I: 0."));
+        assertEquals(10.0 - 10.0, derivative(g, "status", "S", "isolation", "free"), 1e-12);
+        assertEquals(5.0 - 5.0, derivative(g, "status", "S", "isolation", "isolated"), 1e-12);
+        assertTrue(g.model.warnings.isEmpty(), g.model.warnings.toString());
+    }
+
+    @Test
+    void inheritedAndEntryTogetherAreRejected() {
+        String message = rejection(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated)); entry: #(free); inherited.",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_isolation: #(100 50); I: 0."));
+        assertTrue(message.contains("inherited"), message);
+    }
+
+    @Test
+    void inheritedWithoutAnAttributeIsRejected() {
+        String message = rejection(String.join("\n",
+                "KModel Isolation",
+                "    parameters: #(p); inherited.",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; p: 1; I: 0."));
+        assertTrue(message.contains("inherited"), message);
+    }
+
+    private static String rejection(String script) {
+        return assertThrows(SemanticException.class, () -> build(script)).getMessage();
     }
 
     private static double total(GroundModel g) {

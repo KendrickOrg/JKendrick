@@ -43,6 +43,7 @@ modelClause
     | 'connectionMatrix:' '#(' row+ ')'                                   # connectionMatrixClause
     | 'topology:' '#(' kind=ID direction=ID? ')'                          # topologyClause
     | 'entry:' '#(' entryValue=(ID | NUMBER) ')'                           # entryClause
+    | 'inherited'                                                         # inheritedClause
     | 'transitionRate:' '#(' expr ')'                                     # transitionRateClause
     | KEYWORD '#(' expr ')'                                               # parameterFormulaClause
     ;

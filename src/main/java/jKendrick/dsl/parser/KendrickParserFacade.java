@@ -115,6 +115,7 @@ public final class KendrickParserFacade {
             Ast.Topology topology = null;
             Ast.Expr transitionRate = null;
             String entry = null;
+            boolean inherited = false;
 
             for (KendrickParser.ModelClauseContext c : ctx.modelClause()) {
                 if (c instanceof KendrickParser.AttributeClauseContext) {
@@ -141,6 +142,8 @@ public final class KendrickParserFacade {
                     topology = at(new Ast.Topology(t.kind.getText(), t.direction == null ? null : t.direction.getText()), t);
                 } else if (c instanceof KendrickParser.EntryClauseContext) {
                     entry = ((KendrickParser.EntryClauseContext) c).entryValue.getText();
+                } else if (c instanceof KendrickParser.InheritedClauseContext) {
+                    inherited = true;
                 } else if (c instanceof KendrickParser.TransitionRateClauseContext) {
                     transitionRate = expr(((KendrickParser.TransitionRateClauseContext) c).expr());
                 } else if (c instanceof KendrickParser.ParameterFormulaClauseContext) {
@@ -148,7 +151,7 @@ public final class KendrickParserFacade {
                     formulas.put(keywordName(p.KEYWORD().getText()), expr(p.expr()));
                 }
             }
-            return at(new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, topology, transitionRate, entry), ctx);
+            return at(new Ast.KModel(ctx.name.getText(), attribute, parameters, formulas, equations, transitions, matrix, topology, transitionRate, entry, inherited), ctx);
         }
 
         private static List<String> domainValues(KendrickParser.DomainContext d) {

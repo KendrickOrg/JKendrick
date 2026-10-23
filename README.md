@@ -204,6 +204,7 @@ The grammar is `src/main/antlr4/jKendrick/dsl/grammar/Kendrick.g4` (ANTLR 4). In
                   | 'connectionMatrix:' '#(' ('#(' NUMBER+ ')')+ ')'
                   | 'topology:' '#(' ID ID? ')'                 -- ring | line | complete, oneWay | twoWay
                   | 'entry:' '#(' (ID | NUMBER) ')'             -- the value taken at entry into the population
+                  | 'inherited'                                 -- the attribute is inherited on purpose (no warning)
                   | 'transitionRate:' '#(' expr ')'
                   | KEYWORD '#(' expr ')'                       -- default formula of a parameter
     domain        : '(' (ID | NUMBER)+ ')' | '(' 'range' NUMBER NUMBER ')'
@@ -238,7 +239,10 @@ species or zones. An attribute that is *acquired* during life (isolation, age, v
 with `entry:` the value every newcomer takes, `entry: #(free)`, `entry: #(young)`: the whole inflow
 then lands on that value and its rate is evaluated with the attribute summed out, so that `mu*N`
 is mu times the whole population, isolated individuals included. Without it, the isolation concern
-of Model 4 would create susceptible birds born isolated, and isolated for life.
+of Model 4 would create susceptible birds born isolated, and isolated for life. A concern with inflows that
+combines with an attribute neither inherited nor given an entry value gets a warning (`ComposedModel.warnings`,
+printed on stderr by the command line) that names the inflows and the attribute; `inherited` declares the
+attribute inherited on purpose, as species and zones are in the models of the paper.
 
 ### Meaning of names
 

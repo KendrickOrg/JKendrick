@@ -23,6 +23,8 @@ public final class ComposedModel {
     public final List<Concern> concerns;
     public final List<Attribute> attributes;
     public final List<Compartment> compartments;
+    /** Warnings about the composition that are not errors: see {@link #inflowWarnings()}. */
+    public final List<String> warnings;
     private final Map<Compartment, Integer> index = new HashMap<>();
     private final Map<String, Attribute> attributeByName = new LinkedHashMap<>();
     private final Map<String, Attribute> attributeByValue = new HashMap<>();
@@ -69,6 +71,32 @@ public final class ComposedModel {
         product(0, new LinkedHashMap<>(), comps);
         this.compartments = Collections.unmodifiableList(comps);
         for (int i = 0; i < comps.size(); i++) index.put(comps.get(i), i);
+        this.warnings = Collections.unmodifiableList(inflowWarnings());
+    }
+
+    /**
+     * One warning per concern with an inflow (a birth from the outside) and per other concern whose attribute is
+     * neither inherited nor given an entry value: the inflow would then be replicated over the values of that
+     * attribute, which is right for species or zones and wrong for a status acquired during life. A concern that
+     * declares its attribute {@code inherited}, or gives it {@code entry:}, is silent.
+     */
+    private List<String> inflowWarnings() {
+        List<String> result = new ArrayList<>();
+        for (Concern k : concerns) {
+            if (k.attribute == null) continue;
+            List<String> inflows = new ArrayList<>();
+            for (Concern.LocalTransition t : k.transitions) if (t.isBirth()) inflows.add(t.toString());
+            if (inflows.isEmpty()) continue;
+            for (Concern other : concerns) {
+                if (other == k || other.attribute == null) continue;
+                if (other.attribute.entry != null || other.attribute.inherited) continue;
+                result.add("the inflows of " + k.name + " (" + String.join(", ", inflows) + ") are replicated over the values of "
+                        + other.attribute.name + ", which " + other.name + " declares neither inherited nor with an entry value:"
+                        + " declare inherited in " + other.name + " if its values are inherited, or entry: #(value) in " + other.name + " if they are"
+                        + " acquired during life");
+            }
+        }
+        return result;
     }
 
     /** Registers a declared name, rejecting one already declared in another category or by another concern. */

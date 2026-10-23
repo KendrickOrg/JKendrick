@@ -18,15 +18,22 @@ public final class Attribute {
      * the attribute is inherited: an inflow is then replicated over all the values.
      */
     public final String entry;
+    /** Whether the attribute is declared {@code inherited}: the inherited default is then intended, and no warning is given. */
+    public final boolean inherited;
 
     public Attribute(String name, List<String> values) {
-        this(name, values, null);
+        this(name, values, null, false);
     }
 
     public Attribute(String name, List<String> values, String entry) {
+        this(name, values, entry, false);
+    }
+
+    public Attribute(String name, List<String> values, String entry, boolean inherited) {
         this.name = name;
         this.values = Collections.unmodifiableList(values);
         this.entry = entry;
+        this.inherited = inherited;
     }
 
     public int indexOf(String value) {

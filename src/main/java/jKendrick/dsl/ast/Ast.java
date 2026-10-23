@@ -77,10 +77,13 @@ public final class Ast {
         public final Expr transitionRate;
         /** Value of {@code entry:}, taken by individuals entering the population (births, immigration), or null. */
         public final String entry;
+        /** Whether the attribute is declared {@code inherited}: its values are inherited on purpose. */
+        public final boolean inherited;
 
         public KModel(String name, Attribute attribute, List<String> parameters,
                       Map<String, Expr> parameterFormulas, List<Equation> equations,
-                      List<Transition> transitions, double[][] connectionMatrix, Topology topology, Expr transitionRate, String entry) {
+                      List<Transition> transitions, double[][] connectionMatrix, Topology topology, Expr transitionRate, String entry,
+                      boolean inherited) {
             super(name);
             this.attribute = attribute;
             this.parameters = Collections.unmodifiableList(parameters);
@@ -90,6 +93,7 @@ public final class Ast {
             this.connectionMatrix = connectionMatrix;
             this.topology = topology;
             this.entry = entry;
+            this.inherited = inherited;
             this.transitionRate = transitionRate;
         }
     }
