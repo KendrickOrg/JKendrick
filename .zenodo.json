@@ -1,0 +1,31 @@
+{
+  "title": "JKendrick: reference implementation of the Kendrick language for epidemiological modeling",
+  "description": "A Java implementation of Kendrick, a domain-specific language in which an epidemiological model is composed from independent concerns (the disease dynamics, the host species, the spatial structure, a control policy). A script is parsed, given its meaning by building the objects of the mathematical meta-model (concerns as automata, their tensor-sum composition, the ground model of a scenario) and run deterministically (RK4 on the composed ODE system) or stochastically (Gillespie, tau-leaping on the composed continuous-time Markov chain). Reference implementation of the paper \"A Formal Approach to Separation of Concerns in Epidemiology Modeling\" (M. Ziane, T. M. A. Bui, S. Stinckwich), submitted to Software and Systems Modeling.",
+  "creators": [
+    {
+      "name": "Ziane, Mikal",
+      "affiliation": "Université Paris Cité; LIP6, Sorbonne Université, CNRS, Paris, France",
+      "orcid": "0000-0003-1860-485X"
+    },
+    {
+      "name": "Bui, Thi Mai Anh",
+      "affiliation": "Hanoi University of Science and Technology, Hanoi, Vietnam"
+    },
+    {
+      "name": "Stinckwich, Serge",
+      "affiliation": "UNU Paris Office, Learning Planet Institute, Paris, France"
+    }
+  ],
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "epidemiological modeling",
+    "domain-specific language",
+    "separation of concerns",
+    "compartmental models",
+    "stochastic automata networks",
+    "Kendrick"
+  ],
+  "language": "eng"
+}
