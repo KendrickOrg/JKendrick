@@ -74,6 +74,8 @@ class NextReactionSolverTest {
         List<Trajectory> ssa = Kendrick.run(Kendrick.load(decay("0.1", "gillespie")));
         double sd = Math.sqrt(N * Math.exp(-1) * (1 - Math.exp(-1)));
         assertEquals(meanA(ssa, 10), meanA(nrm, 10), 3 * sd * Math.sqrt(2.0 / RUNS));
+        assertSurvival(ssa, 5, Math.exp(-0.5));                 // the exact law under Gillespie too
+        assertSurvival(ssa, 10, Math.exp(-1));
     }
 
     @Test
@@ -90,6 +92,16 @@ class NextReactionSolverTest {
         List<Trajectory> runs = Kendrick.run(Kendrick.load(decay("0.1*(1+cos(t))", "nextReaction")));
         assertSurvival(runs, 5, Math.exp(-0.1 * (5 + Math.sin(5))));
         assertSurvival(runs, 10, Math.exp(-0.1 * (10 + Math.sin(10))));
+    }
+
+    @Test
+    void hazardThatVanishesAtEveryNodeOfTheDefaultGridIsNotMissed() {
+        // r = 1 - cos(32 pi t) is zero at every multiple of 1/16, the nodes of Simpson's rule on the default
+        // eight panels per day; H(t) = t - sin(32 pi t) / (32 pi), so H(5) = 5 and H(10) = 10: a fixed grid
+        // would fire nothing, the adaptive quadrature finds the hazard (a referee's counterexample, Oct 2026)
+        String script = decay("1-cos(100.53096491487338*t)", "nextReaction").replace("to: 10;", "to: 1;");
+        List<Trajectory> runs = Kendrick.run(Kendrick.load(script));
+        assertSurvival(runs, 1, Math.exp(-1));
     }
 
     @Test

@@ -15,7 +15,8 @@ import java.util.Map;
  *     from: 0; to: 1500; step: 1;
  *     runs: 10; seed: 42;        -- stochastic solvers only (defaults: 1 run, seed 0)
  *     substeps: 4;               -- integration or leap sub-steps per recording step (default 1)
- *     panels: 8.                 -- nextReaction only: Simpson panels per step for rates that read the time (default 8)
+ *     panels: 8.                 -- nextReaction only: starting Simpson panels per step for rates that read the time
+ *                                   (default 8; each panel is refined adaptively, see Quadrature)
  * </pre>
  */
 public final class SimulationRunner {

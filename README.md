@@ -160,7 +160,7 @@ moved to the first one. On the chart, drag a rectangle to zoom on a time interva
     // or choose the solver yourself
     Trajectory ode = new RungeKuttaSolver(4).solve(model, 0, 1500, 1).get(0);         // 4 substeps per step
     List<Trajectory> ssa = new GillespieSolver(20, 7L).solve(model, 0, 1500, 1);       // 20 runs, seed 7
-    List<Trajectory> nrm = new NextReactionSolver(20, 7L).solve(model, 0, 1500, 1);    // same, exact when a rate reads t
+    List<Trajectory> nrm = new NextReactionSolver(20, 7L).solve(model, 0, 1500, 1);    // same, for rates that read t
     XYChart chart = ChartRenderer.chart(Kendrick.visualizations(model).get(0), ssa);  // XChart
     ChartRenderer.savePng(chart, Paths.get("ssa.png"));
 
@@ -275,9 +275,11 @@ reading and the stochastic solvers say so.
 exact when no rate reads `t`. A model with a rate that reads `t` is refused by it and directed to
 `nextReaction`, Anderson's modified next reaction method (J. Chem. Phys. 127, 214107, 2007), which
 drives every transition by its own unit-rate Poisson process and integrates its propensity between
-events (Simpson's rule on panels of `step / panels`), so that a seasonal forcing such as
-`beta*(1+cos(t))` is simulated exactly; on rates that do not read `t` the two methods give the same
-law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
+events (adaptive Simpson's rule started on panels of `step / panels`, each panel split until two
+estimates agree to a relative 1e-9), so that a seasonal forcing such as `beta*(1+cos(t))` is
+simulated up to that quadrature error; a rate that vanishes at every node of every dyadic
+refinement of the grid would still be missed. On rates that do not read `t` the two methods give
+the same law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
 what its source compartment holds, so that the population is conserved.
 
 What the stochastic solvers check: the initial state must be a vector of nonnegative integers (an

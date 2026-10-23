@@ -33,10 +33,18 @@ public final class ComposedModel {
         this.name = name;
         this.concerns = Collections.unmodifiableList(new ArrayList<>(concerns));
         List<Attribute> attrs = new ArrayList<>();
+        // One namespace: an attribute name, an attribute value and a parameter name are distinct from each
+        // other across all the concerns, and from the reserved N and t. Otherwise a name of one concern
+        // would capture, in the expressions of another, a name that the other owns (a parameter I of a
+        // concern would be read where SEIRS writes beta*I/N), which the independence of concerns forbids.
+        Map<String, String> declared = new HashMap<>();
+        declared.put("N", "the reserved name N (the population)");
+        declared.put("t", "the reserved name t (the time)");
         for (Concern c : concerns) {
             if (c.attribute != null) {
                 if (attributeByName.containsKey(c.attribute.name))
                     throw new IllegalArgumentException("attribute " + c.attribute.name + " is declared by two concerns");
+                declare(declared, c.attribute.name, "the attribute of " + c.name);
                 attrs.add(c.attribute);
                 attributeByName.put(c.attribute.name, c.attribute);
                 concernByAttribute.put(c.attribute.name, c);
@@ -44,6 +52,7 @@ public final class ComposedModel {
                     if (attributeByValue.containsKey(v))
                         throw new IllegalArgumentException("value " + v + " belongs to attributes "
                                 + attributeByValue.get(v).name + " and " + c.attribute.name);
+                    declare(declared, v, "a value of the attribute " + c.attribute.name + " of " + c.name);
                     attributeByValue.put(v, c.attribute);
                 }
             }
@@ -52,6 +61,7 @@ public final class ComposedModel {
                 if (other != null)
                     throw new IllegalArgumentException("parameter " + p + " is declared by both " + other.name + " and " + c.name
                             + ": a parameter belongs to one concern; bind the two to the same value in the scenario");
+                declare(declared, p, "a parameter of " + c.name);
             }
         }
         this.attributes = Collections.unmodifiableList(attrs);
@@ -59,6 +69,14 @@ public final class ComposedModel {
         product(0, new LinkedHashMap<>(), comps);
         this.compartments = Collections.unmodifiableList(comps);
         for (int i = 0; i < comps.size(); i++) index.put(comps.get(i), i);
+    }
+
+    /** Registers a declared name, rejecting one already declared in another category or by another concern. */
+    private static void declare(Map<String, String> declared, String name, String what) {
+        String before = declared.putIfAbsent(name, what);
+        if (before != null)
+            throw new IllegalArgumentException("name " + name + " is " + what + " and " + before
+                    + ": a name belongs to one concern and one category (attribute, value or parameter), and N and t are reserved");
     }
 
     private void product(int i, Map<String, String> current, List<Compartment> out) {
