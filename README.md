@@ -362,8 +362,12 @@ close to the ODE on average, tau-leap close to Gillespie, flow-form equations ru
 an oscillating and a delayed hazard, whose survival is known exactly, the ensemble mean of 200 runs
 within three standard errors of it and the variance too, and against Gillespie on a constant rate;
 `AdmissibilityTest`: a negative or undefined rate stops the run, a fractional initial state is
-refused, tau-leaping conserves the population when a leap overshoots) and the series extraction of
-`Visualization` (`VisualizationSpecTest`).
+refused, tau-leaping conserves the population when a leap overshoots; `ValidationSetTest`: the semantic
+cases of the translation on derivatives and event systems at chosen states against hand-computed values:
+a rate that differs by species, a force of infection summed over species by a scenario formula, births
+over an inherited and into the entry value of an acquired attribute, two coincident transitions or
+equation terms kept as two events, and a composition in the other order equal under the permutation of
+the compartments) and the series extraction of `Visualization` (`VisualizationSpecTest`).
 
 ## Publications
 
