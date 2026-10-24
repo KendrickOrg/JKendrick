@@ -297,7 +297,9 @@ run stops with an error naming the transition and the time when a propensity is 
 or undefined (a rate is evaluated only where its source compartment is nonempty, so a quotient by an
 empty sub-population is not an error until an individual is there to move). They do not bound the
 number of events, which is finite when the inflow rates grow at most linearly with the population.
-The deterministic solver checks none of this and propagates such values into the trajectory.
+Every solver, the deterministic one included, sets a negative inflow rate to zero, so a negative inflow
+formula means no inflow. The deterministic solver checks none of the rest and propagates negative or
+undefined per capita rates into the trajectory.
 
 `Visualization` takes `plot: 'diagram'` (series against time, the only kind for now), `for:` (a
 Simulation), `data:` (`#(I_species)`: one series per species, the infectious summed over the other
