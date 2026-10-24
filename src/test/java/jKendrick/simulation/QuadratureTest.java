@@ -23,12 +23,40 @@ class QuadratureTest {
         assertEquals(0.5, Quadrature.integral(HAZARD, 0, 0.5, h), 1e-7);
     }
 
+    /** The exact integral over [0, t] of 1 - cos(omega t). */
+    static double integrated(double omega, double t) {
+        return t - Math.sin(omega * t) / omega;
+    }
+
     @Test
     void theTimeToReachATargetIsFoundOnTheSameHazard() {
-        // H(t) = t - sin(32 pi t) / (32 pi) equals 0.5 at t = 0.5 and 1 at t = 1
-        assertEquals(0.5, Quadrature.timeToReach(HAZARD, 0, 0.5, 10, 1.0 / 8), 1e-6);
-        assertEquals(1.0, Quadrature.timeToReach(HAZARD, 0, 1.0, 10, 1.0 / 8), 1e-6);
+        // H(t) = t - sin(32 pi t) / (32 pi) reaches 0.5 at t = 0.5 and 1 at t = 1, where the hazard is zero and
+        // H is flat: the time is ill-conditioned there, so the check is on H at the time found
+        for (double target : new double[] {0.5, 1.0}) {
+            double x = Quadrature.timeToReach(HAZARD, 0, target, 10, 1.0 / 8);
+            assertEquals(target, integrated(OMEGA, x), 1e-9);
+            assertEquals(target, x, 1e-4);
+        }
         assertTrue(Double.isInfinite(Quadrature.timeToReach(HAZARD, 0, 20, 10, 1.0 / 8)));
+    }
+
+    @Test
+    void fasterHazardsThatVanishAtTheFirstSampledPointsAreIntegrated() {
+        // 1 - cos(64 pi t) and 1 - cos(128 pi t) vanish at the five points that a single Simpson comparison
+        // samples on a panel of 1/8; a rule that accepts a panel after that comparison returns 0 (referee, Oct 2026)
+        for (double omega : new double[] {64 * Math.PI, 128 * Math.PI}) {
+            java.util.function.DoubleUnaryOperator hazard = t -> 1 - Math.cos(omega * t);
+            assertEquals(1.0, Quadrature.integral(hazard, 0, 1, 1.0 / 8), 1e-7);
+            assertEquals(1.0, integrated(omega, Quadrature.timeToReach(hazard, 0, 1.0, 10, 1.0 / 8)), 1e-9);
+        }
+    }
+
+    @Test
+    void aHazardThatVanishesAtEveryPointOfTheFinestForcedGridIsMissedAsDocumented() {
+        // the documented limit: with panels of 1/8 every panel is refined to 1/64 and sampled every 1/256;
+        // 1 - cos(512 pi t) vanishes at all those points, so its integral (1 over [0, 1]) is missed
+        java.util.function.DoubleUnaryOperator hazard = t -> 1 - Math.cos(512 * Math.PI * t);
+        assertEquals(0.0, Quadrature.integral(hazard, 0, 1, 1.0 / 8), 1e-12);
     }
 
     @Test

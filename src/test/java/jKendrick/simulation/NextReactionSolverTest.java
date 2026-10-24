@@ -105,6 +105,30 @@ class NextReactionSolverTest {
     }
 
     @Test
+    void fasterHazardsThatVanishAtTheFirstSampledPointsAreNotMissed() {
+        // 1 - cos(64 pi t) and 1 - cos(128 pi t): H(1) = 1, so the survival at day 1 is exp(-1); a rule that
+        // accepted a panel after one comparison returned 1000 survivors for both (referee, Oct 2026)
+        for (String omega : new String[] {"201.06192982974676", "402.1238596594935"}) {
+            String script = decay("1-cos(" + omega + "*t)", "nextReaction").replace("to: 10;", "to: 1;");
+            assertSurvival(Kendrick.run(Kendrick.load(script)), 1, Math.exp(-1));
+        }
+    }
+
+    @Test
+    void theRecordingStepDoesNotChangeTheSimulatedLaw() {
+        // a daily cycle 0.05 (1 - cos 2 pi t) recorded every 32 days: H(32) = 1.6; with starting panels of
+        // step / panels = 4 days every sampled point was an integer day, where the hazard is zero (referee,
+        // Oct 2026); the panels are now capped at quadratureStep, 1/8 day by default
+        String script = decay("0.05*(1-cos(6.283185307179586*t))", "nextReaction")
+                .replace("to: 10; step: 1;", "to: 32; step: 32;");
+        List<Trajectory> runs = Kendrick.run(Kendrick.load(script));
+        double expected = N * Math.exp(-1.6), sd = Math.sqrt(N * Math.exp(-1.6) * (1 - Math.exp(-1.6)));
+        double last = 0;
+        for (Trajectory r : runs) last += r.last()[0];
+        assertEquals(expected, last / runs.size(), 3 * sd / Math.sqrt(runs.size()), "mean of A at day 32");
+    }
+
+    @Test
     void hazardThatStartsLaterAgreesWithTheExactLaw() {
         // r = 0.2 max(0, t - 5): nothing before day 5, then H(t) = 0.1 (t - 5)^2
         List<Trajectory> runs = Kendrick.run(Kendrick.load(decay("0.2*max(0, t-5)", "nextReaction")));

@@ -5,16 +5,18 @@ import jKendrick.model.GroundModel;
 import java.util.Random;
 
 /**
- * Anderson's modified next reaction method on the composed CTMC: exact when some rates read the
- * time, where Gillespie's direct method is not.
+ * Anderson's modified next reaction method on the composed CTMC, for models in which some rates read
+ * the time, which Gillespie's direct method refuses. The law it simulates is exact up to the error of the
+ * quadrature that integrates those rates ({@link Quadrature}).
  *
  * Every transition k is driven by its own unit-rate Poisson process: P_k is the internal time of
  * its next firing and T_k the internal time reached so far, the integral of its propensity a_k
  * over the elapsed real time. The transition fires at the real time t + dt_k at which the integral
  * of a_k over [t, t + dt_k] equals P_k - T_k; the next event is the transition with the smallest
  * firing time. When a propensity does not read the time it is constant between two changes of the
- * state and dt_k = (P_k - T_k) / a_k; when it does, the integral is computed by Simpson's rule on
- * panels of at most a fraction of the recording step ({@link Quadrature}). The firing time of a
+ * state and dt_k = (P_k - T_k) / a_k; when it does, the integral is computed by adaptive Simpson's rule
+ * ({@link Quadrature}) on starting panels of width min(step / panels, quadratureStep), so that the
+ * resolution does not depend on the recording step alone. The firing time of a
  * transition is recomputed only when the event changes a compartment its propensity reads, or
  * fires it; its internal time is brought up to date at that moment, with the propensity the
  * transition had meanwhile.
@@ -23,17 +25,27 @@ import java.util.Random;
  * does not fire before it; when no transition fires before the end, the run is over.
  */
 public final class NextReactionSolver extends StochasticSolver {
+    /** Default of {@link #quadratureStep}: one eighth of a time unit. */
+    public static final double QUADRATURE_STEP = 0.125;
     /** Simpson panels per recording step for the propensities that read the time. */
     private final int panels;
+    /** Largest width of a starting panel, whatever the recording step. */
+    private final double quadratureStep;
 
     public NextReactionSolver(int runs, long seed) {
-        this(runs, seed, 8);
+        this(runs, seed, 8, QUADRATURE_STEP);
     }
 
     public NextReactionSolver(int runs, long seed, int panels) {
+        this(runs, seed, panels, QUADRATURE_STEP);
+    }
+
+    public NextReactionSolver(int runs, long seed, int panels, double quadratureStep) {
         super(runs, seed);
         if (panels < 1) throw new IllegalArgumentException("panels must be >= 1");
+        if (!(quadratureStep > 0)) throw new IllegalArgumentException("quadratureStep must be > 0");
         this.panels = panels;
+        this.quadratureStep = quadratureStep;
     }
 
     @Override
@@ -43,7 +55,7 @@ public final class NextReactionSolver extends StochasticSolver {
         double[][] states = new double[times.length][];
         states[0] = y.clone();
         int m = g.transitions().size();
-        double h = step / panels;
+        double h = Math.min(step / panels, quadratureStep);
         boolean[] timed = new boolean[m];
         for (int i : g.timeDependent()) timed[i] = true;
         double[] P = new double[m], T = new double[m], firing = new double[m], since = new double[m];

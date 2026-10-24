@@ -261,14 +261,18 @@ attribute inherited on purpose, as species and zones are in the models of the pa
   variables (`ip`).
 - **`sum_ (i in a) e`** sums `e` over the values of attribute `a`; **`t`** is the time.
 - An **initial cardinality** is assigned to a compartment name: `S: 49990` spreads 49 990 evenly over
-  all the S compartments, `S_birds_1: 49990` gives it to one; the last assignment wins.
+  all the S compartments, `S_birds_1: 49990` gives it to one; the last assignment wins. An assignment
+  that is spread over the values of an attribute with an `entry:` value gets a warning (`GroundModel.warnings`,
+  printed on stderr), since individuals do not usually start in every acquired state: index it with the
+  entry value (`S_species_free`) or with the attribute.
 
 ### Simulation and Visualization
 
 `Simulation` takes `solver:` (`'rungeKutta'`, `'gillespie'`, `'nextReaction'` or `'tauLeap'`), `from:`,
 `to:`, `step:` (the times at which the state is recorded), for the stochastic solvers `runs:` and
-`seed:`, `substeps:` (RK4 sub-steps per step, or tau-leap leaps per step) and `panels:` (next reaction
-only: Simpson panels per step for the rates that read the time, default 8). The stochastic solvers need every
+`seed:`, `substeps:` (RK4 sub-steps per step, or tau-leap leaps per step), and for the next reaction
+solver `panels:` (starting Simpson panels per step for the rates that read the time, default 8) and
+`quadratureStep:` (the largest width of a starting panel, default 0.125 time unit). The stochastic solvers need every
 concern's dynamics as transitions: a concern given by ODEs provides them when every term of its
 equations is a flow proportional to its source compartment (`-lambda*S` in `S` matched by `+lambda*S`
 in `E` is `S -- lambda --> E`; an unmatched `-mu*S` is a death, an unmatched `+mu*N` a birth), which
@@ -279,11 +283,12 @@ reading and the stochastic solvers say so.
 exact when no rate reads `t`. A model with a rate that reads `t` is refused by it and directed to
 `nextReaction`, Anderson's modified next reaction method (J. Chem. Phys. 127, 214107, 2007), which
 drives every transition by its own unit-rate Poisson process and integrates its propensity between
-events (adaptive Simpson's rule started on panels of `step / panels`, each panel split until two
-estimates agree to a relative 1e-9), so that a seasonal forcing such as `beta*(1+cos(t))` is
-simulated up to that quadrature error; a rate that vanishes at every node of every dyadic
-refinement of the grid would still be missed. On rates that do not read `t` the two methods give
-the same law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
+events (adaptive Simpson's rule on starting panels of width `h = min(step / panels, quadratureStep)`,
+each panel split three times whatever its estimates and then until two estimates agree to a relative
+1e-9), so that a seasonal forcing such as `beta*(1+cos(t))` is simulated up to that quadrature error.
+The rate is sampled every `h / 32` before any panel is accepted; a rate whose integral lies between
+those points is missed (with the defaults, `1 - cos(512*pi*t)`, see `QuadratureTest`). On rates that do
+not read `t` the two methods give the same law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
 what its source compartment holds, so that the population is conserved.
 
 What the stochastic solvers check: the initial state must be a vector of nonnegative integers (an

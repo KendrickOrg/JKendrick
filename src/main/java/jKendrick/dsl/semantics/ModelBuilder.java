@@ -252,6 +252,8 @@ public final class ModelBuilder {
         private final Map<String, String> variables = new LinkedHashMap<>();
         private final Map<String, ParameterValue> parameters = new LinkedHashMap<>();
         private final double[] state;
+        /** Initial sizes spread over the values of an attribute that has an entry value (see assignCompartment). */
+        private final List<String> warnings = new ArrayList<>();
 
         ScenarioBuilder(ComposedModel model, Ast.Scenario sc) {
             this.model = model;
@@ -281,7 +283,7 @@ public final class ModelBuilder {
                 }
             }
             checkFormulaCycles();
-            return new GroundModel(sc.name, model, parameters, variables, state, simulation, visualizations);
+            return new GroundModel(sc.name, model, parameters, variables, state, simulation, visualizations, warnings);
         }
 
         /**
@@ -414,7 +416,20 @@ public final class ModelBuilder {
                 }
             }
             checkShape(a.value, dims, 0, a.target.toString());
+            // an initial size that neither fixes nor indexes an attribute with an entry value is spread over all
+            // its values, newcomers' value included or not: the concern says its states are acquired, so warn
+            for (Attribute b : model.attributes)
+                if (b.entry != null && !fixed.containsKey(b.name) && !dims.contains(b) && nonzero(a.value))
+                    warnings.add(where + ": " + a.target + " is spread evenly over the values of " + b.name
+                            + ", whose states are acquired (entry value " + b.entry + "): index it with "
+                            + b.entry + " or with " + b.name + " to say where the initial population is");
             spread(a.value, dims, 0, fixed, a.target.toString());
+        }
+
+        private static boolean nonzero(Ast.NumberArray value) {
+            if (value.isScalar()) return value.scalar != 0;
+            for (Ast.NumberArray e : value.elements) if (nonzero(e)) return true;
+            return false;
         }
 
         private void spread(Ast.NumberArray value, List<Attribute> dims, int depth, Map<String, String> constraints, String target) {

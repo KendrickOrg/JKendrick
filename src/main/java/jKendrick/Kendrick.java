@@ -76,7 +76,7 @@ public final class Kendrick {
             System.exit(2);
         }
         GroundModel model = load(Paths.get(script));
-        for (String w : model.model.warnings) System.err.println("warning: " + w);
+        for (String w : model.warnings) System.err.println("warning: " + w);
         System.out.printf("%s: %d concerns, %d compartments, %d transitions%n", model.model.name,
                 model.model.concerns.size(), model.model.compartments.size(), model.transitions().size());
         List<Trajectory> runs = run(model);

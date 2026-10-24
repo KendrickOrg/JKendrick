@@ -15,8 +15,10 @@ import java.util.Map;
  *     from: 0; to: 1500; step: 1;
  *     runs: 10; seed: 42;        -- stochastic solvers only (defaults: 1 run, seed 0)
  *     substeps: 4;               -- integration or leap sub-steps per recording step (default 1)
- *     panels: 8.                 -- nextReaction only: starting Simpson panels per step for rates that read the time
+ *     panels: 8;                 -- nextReaction only: starting Simpson panels per step for rates that read the time
  *                                   (default 8; each panel is refined adaptively, see Quadrature)
+ *     quadratureStep: 0.125.     -- nextReaction only: largest width of a starting panel, whatever the step
+ *                                   (default 0.125 time unit)
  * </pre>
  */
 public final class SimulationRunner {
@@ -26,11 +28,14 @@ public final class SimulationRunner {
         public final String solver;
         public final double from, to, step;
         public final int runs, substeps, panels;
+        public final double quadratureStep;
         public final long seed;
 
-        Settings(String solver, double from, double to, double step, int runs, long seed, int substeps, int panels) {
+        Settings(String solver, double from, double to, double step, int runs, long seed, int substeps, int panels,
+                 double quadratureStep) {
             this.solver = solver; this.from = from; this.to = to; this.step = step;
             this.runs = runs; this.seed = seed; this.substeps = substeps; this.panels = panels;
+            this.quadratureStep = quadratureStep;
         }
 
         public static Settings of(Map<String, Ast.Literal> args) {
@@ -41,14 +46,15 @@ public final class SimulationRunner {
             int runs = (int) number(args, "runs", 1), substeps = (int) number(args, "substeps", 1);
             long seed = (long) number(args, "seed", 0);
             int panels = (int) number(args, "panels", 8);
-            return new Settings(solver, from, to, step, runs, seed, substeps, panels);
+            double quadratureStep = number(args, "quadratureStep", NextReactionSolver.QUADRATURE_STEP);
+            return new Settings(solver, from, to, step, runs, seed, substeps, panels, quadratureStep);
         }
 
         public Solver solver() {
             switch (solver) {
                 case "rungeKutta": case "rk4": return new RungeKuttaSolver(substeps);
                 case "gillespie": return new GillespieSolver(runs, seed);
-                case "nextReaction": case "anderson": return new NextReactionSolver(runs, seed, panels);
+                case "nextReaction": case "anderson": return new NextReactionSolver(runs, seed, panels, quadratureStep);
                 case "tauLeap": return new TauLeapSolver(runs, seed, substeps);
                 default: throw new IllegalArgumentException("Simulation: unknown solver '" + solver
                         + "' (rungeKutta, gillespie, nextReaction, tauLeap)");

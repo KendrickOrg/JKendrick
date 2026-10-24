@@ -31,6 +31,8 @@ public final class GroundModel {
     public final Map<String, Ast.Literal> simulation;
     /** Arguments of the Visualization entities, by entity name (plot, data, legends...), or empty. */
     public final Map<String, Map<String, Ast.Literal>> visualizations;
+    /** Warnings that are not errors: those of the composition, then those of the scenario. */
+    public final List<String> warnings;
 
     public GroundModel(String name, ComposedModel model, Map<String, ParameterValue> parameters,
                        Map<String, String> variables, double[] initialState, Map<String, Ast.Literal> simulation) {
@@ -40,7 +42,16 @@ public final class GroundModel {
     public GroundModel(String name, ComposedModel model, Map<String, ParameterValue> parameters,
                        Map<String, String> variables, double[] initialState, Map<String, Ast.Literal> simulation,
                        Map<String, Map<String, Ast.Literal>> visualizations) {
+        this(name, model, parameters, variables, initialState, simulation, visualizations, Collections.emptyList());
+    }
+
+    public GroundModel(String name, ComposedModel model, Map<String, ParameterValue> parameters,
+                       Map<String, String> variables, double[] initialState, Map<String, Ast.Literal> simulation,
+                       Map<String, Map<String, Ast.Literal>> visualizations, List<String> scenarioWarnings) {
         this.name = name;
+        List<String> w = new ArrayList<>(model.warnings);
+        w.addAll(scenarioWarnings);
+        this.warnings = Collections.unmodifiableList(w);
         this.model = model;
         this.parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
         this.variables = Collections.unmodifiableMap(new LinkedHashMap<>(variables));

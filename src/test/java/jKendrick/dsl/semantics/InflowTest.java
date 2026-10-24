@@ -124,6 +124,34 @@ class InflowTest {
         assertTrue(message.contains("inherited"), message);
     }
 
+    @Test
+    void anInitialSizeSpreadOverAnAcquiredAttributeIsWarnedAbout() {
+        // S: 150 does not say whether the initial susceptibles are free or isolated: it is spread over both
+        // (75 and 75), which the entry value says is not where individuals start (referee, Oct 2026)
+        GroundModel spread = build(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated));",
+                "    entry: #(free).",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S: 150; I: 0."));
+        double[] y = spread.initialState();
+        assertEquals(75.0, y[spread.model.indexOf(compartment("status", "S", "isolation", "free"))], 1e-12);
+        assertEquals(75.0, y[spread.model.indexOf(compartment("status", "S", "isolation", "isolated"))], 1e-12);
+        assertEquals(1, spread.warnings.size(), spread.warnings.toString());
+        assertTrue(spread.warnings.get(0).contains("isolation") && spread.warnings.get(0).contains("free"),
+                spread.warnings.get(0));
+        // indexed with the entry value: no warning, and everyone starts free
+        GroundModel placed = build(String.join("\n",
+                "KModel Isolation",
+                "    attribute: #(isolation in (free isolated));",
+                "    entry: #(free).",
+                "Composition M model: 'SI'; model: 'Isolation'.",
+                "Scenario Scr on: 'M'; beta: 0.5; mu: 0.1; iota: 0; S_free: 150; I: 0."));
+        assertTrue(placed.warnings.isEmpty(), placed.warnings.toString());
+        assertEquals(150.0, placed.initialState()[placed.model.indexOf(
+                compartment("status", "S", "isolation", "free"))], 1e-12);
+    }
+
     private static String rejection(String script) {
         return assertThrows(SemanticException.class, () -> build(script)).getMessage();
     }
