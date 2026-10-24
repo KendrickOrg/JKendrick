@@ -286,8 +286,9 @@ drives every transition by its own unit-rate Poisson process and integrates its 
 events (adaptive Simpson's rule on starting panels of width `h = min(step / panels, quadratureStep)`,
 each panel split three times whatever its estimates and then until two estimates agree to a relative
 1e-9), so that a seasonal forcing such as `beta*(1+cos(t))` is simulated up to that quadrature error.
-The rate is sampled every `h / 32` before any panel is accepted; a rate whose integral lies between
-those points is missed (with the defaults, `1 - cos(512*pi*t)`, see `QuadratureTest`). On rates that do
+The rate is sampled every `h / 32` before any panel is accepted; a rate that varies between those
+points is missed or overcounted (with the defaults, `1 - cos(512*pi*t)` integrates to 0, see
+`QuadratureTest`, and `1 + cos(512*pi*t)` to 2, over [0, 1]). On rates that do
 not read `t` the two methods give the same law. `tauLeap` holds the rates constant within a leap and drops the firings of a transition beyond
 what its source compartment holds, so that the population is conserved.
 

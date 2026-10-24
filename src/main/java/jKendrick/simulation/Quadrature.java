@@ -15,9 +15,9 @@ import java.util.function.DoubleUnaryOperator;
  * been sampled on a grid of spacing at most h / 2^(MIN_DEPTH + 2), that is h / 32.
  *
  * The integral is computed to the tolerance for a function that is smooth on the scale of that grid. A
- * function whose mass lies between the points of the grid, such as one that vanishes at all of them, is
- * missed: no rule that samples a function at finitely many points can exclude that, and
- * {@code QuadratureTest} shows such a case. The width h does not depend on the recording step alone: the
+ * function that varies between the points of the grid is missed or overcounted: one that vanishes at all of
+ * them integrates to zero (QuadratureTest shows such a case), one that peaks at all of them to too much. No
+ * rule that samples a function at finitely many points can exclude that. The width h does not depend on the recording step alone: the
  * solver caps it by an absolute width ({@code quadratureStep:}, see {@link SimulationRunner}).
  *
  * The inverse problem (the time at which the integral reaches a target) marches panel by panel. In the
