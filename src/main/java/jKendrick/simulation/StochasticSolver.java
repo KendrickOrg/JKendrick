@@ -53,7 +53,10 @@ public abstract class StochasticSolver implements Solver {
                         + "compartments it designates: index it so that every compartment gets an integer)");
             }
         List<Trajectory> result = new ArrayList<>();
-        for (int r = 0; r < runs; r++) result.add(run(g, from, to, step, new Random(seed + r)));
+        // one seed per run from SplitMix64: consecutive seeds of java.util.Random give nearly equal first
+        // draws, which made the first clocks of the next reaction method nearly equal across runs
+        java.util.SplittableRandom seeds = new java.util.SplittableRandom(seed);
+        for (int r = 0; r < runs; r++) result.add(run(g, from, to, step, new Random(seeds.nextLong())));
         return result;
     }
 

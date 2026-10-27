@@ -234,6 +234,9 @@ public final class ModelBuilder {
         exprs.addAll(c.parameterFormulas.values());
         for (Concern.LocalTransition t : c.transitions) exprs.add(t.rate);
         for (Ast.Expr e : exprs) {
+            for (String a : summedAttributes(e))
+                if (c.attribute == null || !c.attribute.name.equals(a))
+                    throw new SemanticException(where + " sums over '" + a + "', which is not its attribute: a concern must not depend on another one");
             for (Ast.Indexed n : names(e)) {
                 if (!allowed.contains(n.base))
                     throw new SemanticException(where + " uses '" + n.base + "', which it does not declare: a concern must not depend on another one");
@@ -241,6 +244,20 @@ public final class ModelBuilder {
                     throw new SemanticException(where + " uses the indexed name '" + n + "': heterogeneities belong to scenarios");
             }
         }
+    }
+
+    /** The attributes that the sums of an expression range over. */
+    private static List<String> summedAttributes(Ast.Expr e) {
+        List<String> out = new ArrayList<>();
+        e.accept(new Ast.ExprVisitor<Void>() {
+            @Override public Void visitNumber(Ast.Num x) { return null; }
+            @Override public Void visitName(Ast.Name x) { return null; }
+            @Override public Void visitBinary(Ast.Binary x) { x.left.accept(this); x.right.accept(this); return null; }
+            @Override public Void visitNeg(Ast.Neg x) { x.operand.accept(this); return null; }
+            @Override public Void visitCall(Ast.Call x) { for (Ast.Expr a : x.arguments) a.accept(this); return null; }
+            @Override public Void visitSum(Ast.Sum x) { out.add(x.attribute); x.body.accept(this); return null; }
+        });
+        return out;
     }
 
     private static List<Ast.Indexed> names(Ast.Expr e) {

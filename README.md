@@ -387,8 +387,12 @@ equation terms kept as two events, and a composition in the other order equal un
 the compartments), the namespace rule (`NameClashTest`: a composition in which a name belongs to two
 concerns or two categories is rejected; `RenamingTest`: the `renaming:` clause composes two concerns
 with the same values or the same parameter name, renames the concern's expressions and compartments,
-and rejects an undeclared name, a renaming that still clashes and a reserved name) and the series
-extraction of `Visualization` (`VisualizationSpecTest`).
+and rejects an undeclared name, a renaming that still clashes and a reserved name), three defects found
+by a referee in October 2026 (`SecondReviewTest`: the replicate runs of the stochastic solvers are seeded
+independently, so that the probability that an SIR epidemic with beta = 2, gamma = 1, S = 99, I = 1 dies out
+at its first event is 1/2.98 within three standard errors over 2000 runs, which consecutive seeds broke for
+the next reaction method; `S:t = -beta*S*I/N` is read as flows; a concern cannot sum over another concern's
+attribute) and the series extraction of `Visualization` (`VisualizationSpecTest`).
 
 ## Publications
 

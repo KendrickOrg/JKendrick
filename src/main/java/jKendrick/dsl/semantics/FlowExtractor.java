@@ -32,7 +32,7 @@ public final class FlowExtractor {
 
     /** A signed product of factors: {@code sign * (numerator factors) / (denominator factors)}. */
     private static final class Term {
-        final int sign;
+        int sign;
         final List<Ast.Expr> numerator = new ArrayList<>();
         final List<Ast.Expr> denominator = new ArrayList<>();
         Term(int sign) { this.sign = sign; }
@@ -144,7 +144,11 @@ public final class FlowExtractor {
             if (b.op == '/') return factors(b.left, t, inverted) && factors(b.right, t, !inverted);
             return false;
         }
-        if (e instanceof Ast.Neg || e instanceof Ast.Sum) return false;
+        if (e instanceof Ast.Neg) { // a negated factor, -beta in -beta*S*I/N, flips the sign of the term
+            t.sign = -t.sign;
+            return factors(((Ast.Neg) e).operand, t, inverted);
+        }
+        if (e instanceof Ast.Sum) return false;
         (inverted ? t.denominator : t.numerator).add(e);
         return true;
     }
