@@ -136,12 +136,26 @@ public final class Ast {
 
     // ------------------------------------------------------------------ Composition
 
-    /** {@code Composition <name> model: 'A'; model: 'B'.} */
+    /**
+     * {@code Composition <name> model: 'A'; model: 'B' renaming: #((1 z1) (2 z2)).}
+     * A renaming maps declared names of a concern (its attribute, values or parameters) to the names
+     * they take in this composition; {@code renamings} has one map per model, empty when the model
+     * is composed as written.
+     */
     public static final class Composition extends Entity {
         public final List<String> models;
+        public final List<Map<String, String>> renamings;
         public Composition(String name, List<String> models) {
+            this(name, models, null);
+        }
+        public Composition(String name, List<String> models, List<Map<String, String>> renamings) {
             super(name);
             this.models = Collections.unmodifiableList(models);
+            List<Map<String, String>> r = new ArrayList<>();
+            for (int i = 0; i < models.size(); i++)
+                r.add(renamings == null ? Collections.emptyMap()
+                        : Collections.unmodifiableMap(new LinkedHashMap<>(renamings.get(i))));
+            this.renamings = Collections.unmodifiableList(r);
         }
     }
 

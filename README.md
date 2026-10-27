@@ -99,8 +99,10 @@ following script is `src/test/resources/models/Model1.kendrick`, an SEIRS model 
 A `KModel` is a concern: an attribute partitioning the population (here the infection `status`),
 the parameters it introduces, and its dynamics, given as ODEs (`equations:`) or as transitions
 between attribute values (`transitions: #(S -- lambda --> E. E -- sigma --> I. ...)`). A
-`Composition` lists the concerns of the model; a `Scenario` gives every parameter and initial
-cardinality a value; a `Simulation` says how to run it and a `Visualization` what to plot.
+`Composition` lists the concerns of the model, and may rename names a concern declares for this
+composition (`model: 'Zone' renaming: #((1 z1) (2 z2))`, so that two concerns written independently
+with the same values or parameter names compose unedited); a `Scenario` gives every parameter and initial
+size a value; a `Simulation` says how to run it and a `Visualization` what to plot.
 
 Separation of concerns shows when the model grows. `Model2.kendrick` adds a second concern,
 
@@ -193,7 +195,8 @@ The grammar is `src/main/antlr4/jKendrick/dsl/grammar/Kendrick.g4` (ANTLR 4). In
 
     script        : entity+ EOF
     entity        : 'KModel' ID clause (';' clause)* '.'
-                  | 'Composition' ID ('model:' STRING) (';' 'model:' STRING)* '.'
+                  | 'Composition' ID modelRef (';' modelRef)* '.'
+    modelRef      : 'model:' STRING ('renaming:' '#(' ('(' value value ')')+ ')')?
                   | 'Scenario' ID 'on:' STRING (';' assignment)* '.'
                   | 'Simulation' ID (KEYWORD literal) (';' KEYWORD literal)* '.'
                   | 'Visualization' ID (KEYWORD literal) (';' KEYWORD literal)* '.'
@@ -381,7 +384,11 @@ cases of the translation on derivatives and event systems at chosen states again
 a rate that differs by species, a force of infection summed over species by a scenario formula, births
 over an inherited and into the entry value of an acquired attribute, two coincident transitions or
 equation terms kept as two events, and a composition in the other order equal under the permutation of
-the compartments) and the series extraction of `Visualization` (`VisualizationSpecTest`).
+the compartments), the namespace rule (`NameClashTest`: a composition in which a name belongs to two
+concerns or two categories is rejected; `RenamingTest`: the `renaming:` clause composes two concerns
+with the same values or the same parameter name, renames the concern's expressions and compartments,
+and rejects an undeclared name, a renaming that still clashes and a reserved name) and the series
+extraction of `Visualization` (`VisualizationSpecTest`).
 
 ## Publications
 

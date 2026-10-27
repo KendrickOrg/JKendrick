@@ -68,11 +68,24 @@ public final class ModelBuilder {
             throw new SemanticException("a script must contain exactly one Composition, found " + compositions.size());
         Ast.Composition comp = compositions.get(0);
         List<Concern> members = new ArrayList<>();
-        for (String name : comp.models) {
+        Set<String> composed = new HashSet<>();
+        for (int i = 0; i < comp.models.size(); i++) {
+            String name = comp.models.get(i);
             Concern c = concerns.get(name);
             if (c == null) throw new SemanticException("Composition " + comp.name + ": unknown KModel '" + name + "'").at(comp);
-            if (members.contains(c)) throw new SemanticException("Composition " + comp.name + ": " + name + " is composed twice").at(comp);
-            members.add(c);
+            if (!composed.add(name)) throw new SemanticException("Composition " + comp.name + ": " + name + " is composed twice").at(comp);
+            // renaming: the concern is composed under other names for some of the names it declares
+            Map<String, String> renaming = comp.renamings.get(i);
+            Set<String> declared = c.declaredNames();
+            for (Map.Entry<String, String> r : renaming.entrySet()) {
+                if (!declared.contains(r.getKey()))
+                    throw new SemanticException("Composition " + comp.name + ": " + name + " declares no '" + r.getKey()
+                            + "' to rename (its names are " + declared + ")").at(comp);
+                if (r.getValue().equals("N") || r.getValue().equals("t"))
+                    throw new SemanticException("Composition " + comp.name + ": '" + r.getKey() + "' cannot be renamed to the reserved name "
+                            + r.getValue()).at(comp);
+            }
+            members.add(c.renamed(renaming));
         }
         ComposedModel model;
         try {

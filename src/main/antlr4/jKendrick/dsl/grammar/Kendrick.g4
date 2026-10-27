@@ -77,8 +77,13 @@ composition
     : 'Composition' name=ID modelRef (';' modelRef)* '.'
     ;
 
+// model: 'Zone' renaming: #((1 z1) (2 z2))   renames declared names of the concern in this composition
 modelRef
-    : 'model:' STRING
+    : 'model:' STRING ('renaming:' '#(' renamePair+ ')')?
+    ;
+
+renamePair
+    : '(' from=value to=value ')'
     ;
 
 // ---- Scenario ----------------------------------------------------------------

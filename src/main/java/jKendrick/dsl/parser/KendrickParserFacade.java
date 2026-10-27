@@ -171,8 +171,19 @@ public final class KendrickParserFacade {
         @Override
         public Ast.Composition visitComposition(KendrickParser.CompositionContext ctx) {
             List<String> models = new ArrayList<>();
-            for (KendrickParser.ModelRefContext m : ctx.modelRef()) models.add(string(m.STRING()));
-            return at(new Ast.Composition(ctx.name.getText(), models), ctx);
+            List<Map<String, String>> renamings = new ArrayList<>();
+            for (KendrickParser.ModelRefContext m : ctx.modelRef()) {
+                models.add(string(m.STRING()));
+                Map<String, String> renaming = new LinkedHashMap<>();
+                for (KendrickParser.RenamePairContext p : m.renamePair()) {
+                    String from = p.from.getText(), to = p.to.getText();
+                    if (renaming.put(from, to) != null)
+                        throw new KendrickSyntaxException(List.of("line " + p.getStart().getLine() + ": Composition "
+                                + ctx.name.getText() + ": '" + from + "' is renamed twice"));
+                }
+                renamings.add(renaming);
+            }
+            return at(new Ast.Composition(ctx.name.getText(), models, renamings), ctx);
         }
 
         // ---- Scenario
